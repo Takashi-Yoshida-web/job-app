@@ -56,9 +56,9 @@ if (fs.existsSync(credentialsPath)) {
 // OAuth2 クライアントを生成するヘルパー関数
 function createOAuth2Client() {
     return new google.auth.OAuth2(
-        googleConfig.clientId,
-        googleConfig.clientSecret,
-        googleConfig.redirectUri
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI
     );
 }
 
