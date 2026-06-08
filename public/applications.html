@@ -39,7 +39,7 @@
         return;
       }
 
-      const res = await fetch('http://localhost:3000/api/applications', {
+      const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -127,7 +127,7 @@
       if (!confirm('この求人情報を削除してもよろしいですか？')) return;
       const token = localStorage.getItem('token');
 
-      const res = await fetch(`http://localhost:3000/api/applications/${jobId}`, {
+      const res = await fetch(`https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/${jobId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

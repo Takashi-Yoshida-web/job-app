@@ -38,7 +38,7 @@
     const email = document.querySelector('input[type="email"]').value;
     const password = document.querySelector('input[type="password"]').value;
 
-    const res = await fetch('http://localhost:3000/register', {
+    const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

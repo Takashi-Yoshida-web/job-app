@@ -106,7 +106,7 @@
     // 🔄 画面全体の描画・更新処理
     async function renderComparisonPage() {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/api/applications/ranking?sortBy=salary', {
+      const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/ranking?sortBy=salary', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
         const myJobs = data.applications || [];

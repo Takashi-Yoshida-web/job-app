@@ -143,7 +143,7 @@
       syncStatus.textContent = '📬 Gmailを同期中...';
 
       try {
-        const res = await fetch('http://localhost:3000/api/applications/sync-gmail', {
+        const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/sync-gmail', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -176,7 +176,7 @@
     async function loadAlerts(token) {
       const container = document.getElementById('alerts-container');
       try {
-        const res = await fetch('http://localhost:3000/api/applications/alerts', {
+        const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/alerts', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -217,7 +217,7 @@
       const sourceContainer = document.getElementById('source-analytics-container');
       const statusContainer = document.getElementById('status-analytics-container');
       try {
-        const res = await fetch('http://localhost:3000/api/applications/analytics/source', {
+        const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/analytics/source', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -284,7 +284,7 @@
       // その後にデータ取得・描画（同期後の最新データが反映される）
       let myJobs = [];
       try {
-        const res = await fetch('http://localhost:3000/api/applications', {
+        const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
