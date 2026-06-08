@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>新規応募登録 - JobTracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="main-full-width">
+    <div class="header auth-header">
+      <h1>新規応募求人の登録</h1>
+    </div>
+
+    <div class="form-container">
+      <form id="job-form" class="register-form">
+        <div class="form-group">
+          <label for="job-title">職種 <span class="required-badge">必須</span></label>
+          <input type="text" id="job-title" placeholder="例：ＳＥ・プログラマー" required>
+        </div>
+
+        <div class="form-group">
+          <label for="company-name">事業所名（企業名） <span class="required-badge">必須</span></label>
+          <input type="text" id="company-name" placeholder="例：株式会社〇〇〇 (株)〇〇 〇〇株式会社" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="location">就業場所</label>
+            <input type="text" id="location" placeholder="例：沖縄県うるま市">
+          </div>
+          <div class="form-group">
+            <label for="salary">賃金（月給/時給）</label>
+            <input type="text" id="salary" placeholder="例：200,000円～">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="work-hours">就業時間</label>
+            <input type="text" id="work-hours" placeholder="例：10:00〜18:00">
+          </div>
+          <div class="form-group">
+            <label for="status">雇用形態</label>
+            <select id="status" class="form-select">
+              <option value="正社員">正社員</option>
+              <option value="派-正社員">派・正社員</option>
+              <option value="パート">パート</option>
+              <option value="契約社員">契約社員</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bonus">賞与</label>
+            <select id="bonus" class="form-select">
+              <option value="あり">あり</option>
+              <option value="なし">なし</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="holiday">休日</label>
+            <select id="holiday" class="form-select">
+              <option value="完全週休二日制（土日祝）">完全週休二日制（土日祝）</option>
+              <option value="シフト制">シフト制</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="features-title">求人の特徴・条件（複数選択可）</label>
+          <div class="checkbox-grid">
+            <label class="check-item"><input type="checkbox" name="features" value="未経験OK"> 未経験OK</label>
+            <label class="check-item"><input type="checkbox" name="features" value="経験不問"> 経験不問</label>
+            <label class="check-item"><input type="checkbox" name="features" value="資格不問"> 資格不問</label>
+            <label class="check-item"><input type="checkbox" name="features" value="転勤なし"> 転勤なし</label>
+            <label class="check-item"><input type="checkbox" name="features" value="在宅・リモート可"> 在宅・リモート可</label>
+            <label class="check-item"><input type="checkbox" name="features" value="マイカー通勤可"> マイカー通勤可</label>
+          </div>
+        </div>
+
+        <div class="form-actions form-actions-center">
+          <a href="applications.html" class="btn-cancel">戻る</a>
+          <button type="submit" class="btn-submit">この内容で登録する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('job-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+
+    const res = await fetch('http://localhost:3000/api/applications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            companyName: document.getElementById('company-name').value,
+            jobTitle: document.getElementById('job-title').value,
+            source: '手動登録'
+        })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+        alert('求人情報を登録しました！');
+        window.location.href = 'applications.html';
+    } else {
+        alert(data.message);
+    }
+});
+  </script>
+</body>
+</html>

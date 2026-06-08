@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Refister-JobTracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <h1>アカウント作成</h1>
+      <p>転職活動をスマートに管理しよう</p>
+
+      <form class="auth-form" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>お名前</label>
+          <input type="text" placeholder="車谷善之助" required>
+        </div>
+        <div class="form-group">
+          <label>メールアドレス</label>
+          <input type="email" placeholder="aaaaaa@mail.com" required>
+        </div>
+        <div class="form-group">
+          <label>パスワード</label>
+          <input type="password" placeholder="1文字以上" required>
+        </div>
+        <button type="submit" class="auth-btn">登録する</button>
+      </form>
+
+      <div class="auth-footer">
+        すでにアカウントをお持ちですか？<a href="login.html">ログイン</a>
+      </div>
+    </div>
+  </div>
+  <script>
+  async function handleRegister(event) {
+    event.preventDefault();
+    const email = document.querySelector('input[type="email"]').value;
+    const password = document.querySelector('input[type="password"]').value;
+
+    const res = await fetch('http://localhost:3000/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      alert('登録が完了しました！');
+      window.location.href = 'login.html';
+    } else {
+      alert(data.message);
+    }
+  }
+
+  </script>
+</body>
+</html>

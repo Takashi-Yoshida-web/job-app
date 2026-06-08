@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>企業評価・比較 - JobTracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">JobTracker</div>
+    <a href="dashboard.html" class="menu-item">ダッシュボード</a>
+    <a href="applications.html" class="menu-item">応募管理</a>
+    <a href="comparison.html" class="menu-item active">企業評価・比較</a>
+
+    <a href="settings.html" class="menu-item">設定</a>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <h1>企業評価・比較</h1>
+    </div>
+
+    <div class="form-container" style="max-width: 100%; margin-bottom: 30px;">
+      <h3 style="margin-bottom: 15px; color: #c9d1d9; font-size: 16px;">🏢 企業の評価を入力・更新する</h3>
+      
+      <form id="comparison-form">
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="comp-company-select">企業を選ぶ <span class="required-badge" style="background:#7c3aed;">連動</span></label>
+          <select id="comp-company-select" class="form-select" required>
+            <option value="">-- 応募管理から企業を選択 --</option>
+          </select>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 15px;">
+          <div class="form-group">
+            <label for="score-salary">💰 給与・福利厚生</label>
+            <select id="score-salary" class="form-select" required>
+              <option value="5">★★★★★ (大満足)</option>
+              <option value="4">★★★★☆ (満足)</option>
+              <option value="3" selected>★★★☆☆ (普通)</option>
+              <option value="2">★★☆☆☆ (少し不満)</option>
+              <option value="1">★☆☆☆☆ (不満)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="score-location">📍 勤務地・通勤</label>
+            <select id="score-location" class="form-select" required>
+              <option value="5">★★★★★ (通いやすい)</option>
+              <option value="4">★★★★☆ (許容範囲内)</option>
+              <option value="3" selected>★★★☆☆ (普通)</option>
+              <option value="2">★★☆☆☆ (やや遠い)</option>
+              <option value="1">★☆☆☆☆ (遠すぎる)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 15px;">
+          <div class="form-group">
+            <label for="score-work">💼 仕事内容・興味</label>
+            <select id="score-work" class="form-select" required>
+              <option value="5">★★★★★ (やりたい事ドンピシャ)</option>
+              <option value="4">★★★★☆ (楽しそう)</option>
+              <option value="3" selected>★★★☆☆ (普通・やれそう)</option>
+              <option value="2">★★☆☆☆ (あまり興味ない)</option>
+              <option value="1">★☆☆☆☆ (やりたくない)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="score-culture">📅 働きやすさ・休日</label>
+            <select id="score-culture" class="form-select" required>
+              <option value="5">★★★★★ (理想的な環境)</option>
+              <option value="4">★★★★☆ (良好)</option>
+              <option value="3" selected>★★★☆☆ (普通)</option>
+              <option value="2">★★☆☆☆ (少し懸念あり)</option>
+              <option value="1">★☆☆☆☆ (厳しそう)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="comp-memo">📝 特記事項・選考メモ</label>
+          <input type="text" id="comp-memo" placeholder="例: 面接官の雰囲気が良かった、研修制度が充実している、など">
+        </div>
+
+        <button type="submit" class="btn-submit">評価を保存・更新する</button>
+      </form>
+    </div>
+
+    <h2 style="font-size: 20px; margin-bottom: 15px; color: #c9d1d9;">📊 企業評価ランキング一覧</h2>
+    <div id="comparison-list-container">
+      </div>
+  </div>
+
+  <script>
+    // 💾 localStorageからデータを取得
+    function getSavedData(key) {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }
+
+    // ⭐ 数値を星マークに変換するヘルパー関数
+    function convertToStars(score) {
+      const num = parseInt(score);
+      return '★'.repeat(num) + '☆'.repeat(5 - num);
+    }
+
+    // 🔄 画面全体の描画・更新処理
+    async function renderComparisonPage() {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/api/applications/ranking?sortBy=salary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+        const myJobs = data.applications || [];
+      // data.applications を使って描画
+    
+      const compRatings = getSavedData('compRatings'); // 企業ごとの評価データ
+    
+      // 1. 企業選択プルダウンを動的に生成
+      const companySelect = document.getElementById('comp-company-select');
+      companySelect.innerHTML = '<option value="">-- 応募管理から企業を選択 --</option>';
+      
+      myJobs.forEach(job => {
+        const option = document.createElement('option');
+        option.value = job.id; // job.id を一意のキーとして使用
+        option.textContent = `${job.company} [${job.title}]`;
+        companySelect.appendChild(option);
+      });
+    
+      // 2. 評価済み企業リストの描画（平均スコアが高い順にソートしてランキング化）
+      const listContainer = document.getElementById('comparison-list-container');
+      listContainer.innerHTML = '';
+
+      // 応募管理の求人データと紐付いている評価だけを抽出（応募管理で削除された企業を自動除外するため）
+      const validRatings = compRatings.filter(rate => myJobs.some(job => job.id == rate.jobId));
+
+      if (validRatings.length === 0) {
+        listContainer.innerHTML = `
+          <div class="card" style="text-align: center; color: #8b949e; padding: 40px 20px;">
+            <p>評価された企業はまだありません。</p>
+            <p style="font-size: 14px; color: #6e7681; margin-top: 5px;">上のフォームから企業を選んで評価を入力してください。</p>
+          </div>
+        `;
+        return;
+      }
+
+      // 平均スコアの計算とソート
+      validRatings.forEach(rate => {
+        rate.avg = (parseInt(rate.salary) + parseInt(rate.location) + parseInt(rate.work) + parseInt(rate.culture)) / 4;
+      });
+      validRatings.sort((a, b) => b.avg - a.avg);
+
+      // カードにして一覧出力
+      validRatings.forEach((rate, index) => {
+        // 元の求人情報を取得して、条件（賃金・休日）を表示に組み込む
+        const originalJob = myJobs.find(job => job.id == rate.jobId);
+        const salaryText = originalJob ? originalJob.salary : "未設定";
+        const holidayText = originalJob ? originalJob.holiday : "未設定";
+
+        listContainer.innerHTML += `
+          <div class="card" style="margin-bottom: 20px; position: relative; border-left: 5px solid #7c3aed;">
+            <span style="position: absolute; top: 15px; left: 15px; background: #21262d; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; color: #7c3aed;">
+              RANK ${index + 1}
+            </span>
+            
+            <div style="padding-left: 60px;">
+              <h3 style="font-size: 18px; margin-bottom: 5px;">${rate.companyName}</h3>
+              <p style="font-size: 13px; color: #8b949e; margin-bottom: 15px;">
+                💰 賃金: ${salaryText} ｜ 📅 休日: ${holidayText}
+              </p>
+              
+              <div class="form-row" style="font-size: 14px; color: #c9d1d9; margin-bottom: 15px; gap: 10px 20px;">
+                <div><span style="color: #8b949e; margin-right: 8px;">給与・福利:</span> <span style="color: #ffb100;">${convertToStars(rate.salary)}</span></div>
+                <div><span style="color: #8b949e; margin-right: 8px;">勤務地・通勤:</span> <span style="color: #ffb100;">${convertToStars(rate.location)}</span></div>
+                <div><span style="color: #8b949e; margin-right: 8px;">仕事内容・興味:</span> <span style="color: #ffb100;">${convertToStars(rate.work)}</span></div>
+                <div><span style="color: #8b949e; margin-right: 8px;">環境・休日面:</span> <span style="color: #ffb100;">${convertToStars(rate.culture)}</span></div>
+              </div>
+
+              <div style="background: #0d1117; padding: 10px 15px; border-radius: 8px; font-size: 14px; color: #c9d1d9;">
+                <strong>メモ:</strong> ${rate.memo || "（なし）"}
+              </div>
+            </div>
+
+            <button onclick="deleteRating(${rate.jobId})" style="position: absolute; top: 15px; right: 15px; background: transparent; color: #f85149; border: none; cursor: pointer; font-size: 13px;">削除</button>
+          </div>
+        `;
+      });
+    
+
+    // ➕ 評価の保存・更新処理
+    document.getElementById('comparison-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const jobId = document.getElementById('comp-company-select').value;
+      const myJobs = getSavedData('myJobs');
+      const targetJob = myJobs.find(job => job.id == jobId);
+
+      if (!targetJob) return;
+
+      const newRating = {
+        jobId: jobId,
+        companyName: targetJob.company,
+        salary: document.getElementById('score-salary').value,
+        location: document.getElementById('score-location').value,
+        work: document.getElementById('score-work').value,
+        culture: document.getElementById('score-culture').value,
+        memo: document.getElementById('comp-memo').value
+      };
+
+      let compRatings = getSavedData('compRatings');
+      
+      // すでに同じ企業の情報があれば上書き、なければ新規追加
+      const existingIndex = compRatings.findIndex(rate => rate.jobId == jobId);
+      if (existingIndex > -1) {
+        compRatings[existingIndex] = newRating;
+      } else {
+        compRatings.push(newRating);
+      }
+
+      localStorage.setItem('compRatings', JSON.stringify(compRatings));
+      document.getElementById('comparison-form').reset();
+      renderComparisonPage();
+      alert('企業評価を保存しました！');
+    });
+
+    // 🗑️ 評価データの個別削除
+    function deleteRating(jobId) {
+      if (confirm('この企業の評価データを削除しますか？（応募管理の求人自体は消えません）')) {
+        let compRatings = getSavedData('compRatings');
+        compRatings = compRatings.filter(rate => rate.jobId != jobId);
+        localStorage.setItem('compRatings', JSON.stringify(compRatings));
+        renderComparisonPage();
+      }
+    }
+
+    // 🌟 ライトモード連動 ＆ 初期化
+    window.onload = function() {
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light-theme');
+      }
+      renderComparisonPage();
+    };
+  }
+  </script>
+</body>
+</html>

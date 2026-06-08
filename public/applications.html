@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>応募管理 - JobTracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">JobTracker</div>
+    <a href="dashboard.html" class="menu-item">ダッシュボード</a>
+    <a href="applications.html" class="menu-item active">応募管理</a>
+    <a href="comparison.html" class="menu-item">企業評価・比較</a>
+    <a href="settings.html" class="menu-item">設定</a>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <div>
+        <h1>応募管理 求人一覧</h1>
+      </div>
+      <div>
+        <a href="add-application.html" class="btn btn-green nav-register-btn">+ 新規求人を登録する</a>
+      </div>
+    </div>
+    <div class="settings-container">
+      <div id="job-list-container" class="job-list-wrapper"></div>
+    </div>
+  </div>
+
+  <script>
+    // 📊 画面への表示処理
+    async function renderJobList() {
+      const token = localStorage.getItem('token');
+
+      // ✅ トークンがなければログイン画面へ
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const res = await fetch('http://localhost:3000/api/applications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const allJobs = data.applications || [];
+      const container = document.getElementById('job-list-container');
+      container.innerHTML = "";
+
+      if (allJobs.length === 0) {
+        container.innerHTML = `
+          <div class="card no-jobs-card">
+            <p>登録されている求人はありません。</p>
+            <p class="no-jobs-sub">右上のボタン、またはGmail同期から求人を登録してください。</p>
+          </div>
+        `;
+        return;
+      }
+
+      allJobs.forEach(job => {
+        // ✅ DBのカラム名に合わせて修正
+        const jobTitle    = job.jobTitle    || '職種未設定';
+        const companyName = job.companyName || '企業名未設定';
+        const status      = job.status      || '応募中';
+        const source      = job.source      || 'その他';
+
+        // ✅ DBにないカラムは「未設定」で表示
+        const location    = '未設定'; // DBにカラムなし
+        const hours       = '未設定'; // DBにカラムなし
+        const number      = source;   // 求人番号の代わりに応募媒体を表示
+
+        // 面接日・期限・持ち物など
+        const interviewDate = job.interviewDate
+          ? new Date(job.interviewDate).toLocaleDateString('ja-JP')
+          : null;
+        const deadlineDate  = job.deadlineDate  || null;
+        const belongings    = job.belongings    || null;
+        const companyUrl    = job.companyUrl    || null;
+
+        // // ステータスバッジの色分け
+        // const statusColors = {
+        //   '書類選考中': '#3fb950',
+        //   '面接待ち':   '#f0883e',
+        //   '不採用':     '#f85149',
+        //   '内定':       '#58a6ff',
+        //   '応募中':     '#8b949e'
+        // };
+        // const statusColor = statusColors[status] || '#8b949e';
+
+        const cardHtml = `
+          <div class="card job-card-row">
+            <div class="block-main">
+              <div class="meta-info">
+                <span class="badge-status">${status}</span>
+                
+                <span class="job-number">応募媒体：${number}</span>
+              </div>
+              <h3 class="job-title">${jobTitle}</h3>
+              <p class="company-name">
+                ${companyUrl
+                  ? `<a href="${companyUrl}" target="_blank" class="company-link">${companyName}</a>`
+                  : `<span>${companyName}</span>`
+                }
+              </p>
+            </div>
+            <hr class="card-divider">
+            <div class="block-conditions">
+              ${interviewDate ? `<div class="cond-item"><span class="cond-label">面接日</span><span class="cond-value"><strong>${interviewDate}</strong></span></div>` : ''}
+              ${deadlineDate  ? `<div class="cond-item"><span class="cond-label">提出期限</span><span class="cond-value"><strong>${deadlineDate}</strong></span></div>` : ''}
+              ${belongings    ? `<div class="cond-item"><span class="cond-label">持ち物</span><span class="cond-value"><strong>${belongings}</strong></span></div>` : ''}
+              ${!interviewDate && !deadlineDate && !belongings
+                ? `<p style="color:#8b949e; font-size:13px;">詳細情報なし</p>`
+                : ''
+              }
+            </div>
+            <div class="block-actions applications-actions">
+              <button class="btn-delete" onclick="deleteJob(${job.id})" title="この求人を削除する">削除</button>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHtml;
+      });
+    }
+
+    // 🗑️ 削除処理（APIで削除）
+    async function deleteJob(jobId) {
+      if (!confirm('この求人情報を削除してもよろしいですか？')) return;
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(`http://localhost:3000/api/applications/${jobId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        renderJobList();
+      } else {
+        alert('削除に失敗しました。');
+      }
+    }
+
+    // 🌟 ライトモード連動 & 初回読み込み
+    window.onload = function() {
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light-theme');
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('gmail_sync') === 'success') {
+        alert('🎉 Gmailとの連携が正常に完了しました！');
+        history.replaceState({}, document.title, window.location.pathname);
+      }
+      renderJobList();
+    };
+  </script>
+</body>
+</html>

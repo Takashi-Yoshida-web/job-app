@@ -1,0 +1,658 @@
+/* 全体 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 各々 */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0d1117;
+  color: white;
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background: #161b22;
+  padding: 20px;
+  border-right: 1px solid #30363d;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+/* メニュー項目の共通設定 */
+.menu-item {
+  display: block;      /* リンクを箱の形にする */
+  text-decoration: none; /* 下線を消す */
+  color: inherit;      /* 文字色を継承する */
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.menu-item:hover {
+  background: #21262d;
+}
+
+.active {
+  background: #7c3aed;
+}
+
+.main {
+  flex: 1;
+  padding: 30px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between; /* 両端に広げる */
+  align-items: center; /* 左右の真ん中に寄せる */
+  margin-bottom: 30px;
+}
+
+.header button {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px; /* カード同士の隙間 */
+  margin-bottom: 40px;
+}
+
+.card {
+  background: #161b22;
+  padding: 20px;
+  border-radius: 15px;
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card h2 {
+  margin-top: 10px;
+  font-size: 32px;
+}
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.pipeline-column {
+  background: #161b22;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.job-card {
+  background: #21262d;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+.job-card p {
+  color: #8b949e;
+  margin-top: 5px;
+}
+
+/* ログイン・登録画面用 */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  background: #0d1117;
+}
+
+.auth-card {
+  background: #161b22;
+  padding: 40px;
+  border-radius: 15px;
+  border: 1px solid #30363d;
+  width: 100%;
+  text-align: center;
+}
+
+.auth-card h1 {
+  margin-bottom: 10px;
+}
+
+.auth-card p {
+  color: #8b949e;
+  margin-bottom: 30px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #7c3aed;
+}
+
+.auth-btn {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.auth-btn:hover {
+  background: #6d28d9;
+}
+
+.auth-footer {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #8b949e;
+}
+
+.auth-footer a {
+  color: #7c3aed;
+  text-decoration: none;
+}
+
+/* 新規応募登録フォーム用 */
+.form-container {
+  background: #161b22;
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid #30363d;
+  max-width: 600px; /* フォームが見やすいように幅を制限 */
+  margin-top: 20px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 入力項目をきれいに横並び・縦並びにする設定 */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* フォーム内のボタン用（ダッシュボードのボタンと色を合わせる） */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.btn-submit {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-submit:hover {
+  background: #6d28d9;
+}
+
+.btn-cancel {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-decoration: none;
+  text-align: center;
+  font-weight: bold;
+}
+
+.btn-cancel:hover {
+  background: #30363d;
+}
+
+.main-form-box {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+}
+
+/* 新規登録画面の中央揃え設定（他ページへの影響なし） */
+
+/* 新規登録画面のヘッダーだけを真ん中に寄せる、ボックスとの隙間を狭くする */
+.header.auth-header {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 10px;  /* 30pxから10pxに縮めて不自然さを解消 */
+}
+
+/* 新規登録画面のボタンだけを真ん中に寄せる */
+.form-actions.form-actions-center {
+  justify-content: center;
+}
+
+/* ============================ */
+/* 設定画面（settings.html）用 */
+/* 設定項目をまとめる大きな箱 */
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  width: 100%; /* 横幅を100％いっぱいに広げる */
+  max-width: 1000px; /* 制限を解除して少し広げる */
+}
+
+/* アカウント設定のフォームも横幅いっぱいに広げる */
+.settings-container .register-form {
+  max-width: 100%; /* フォームの幅制限を解除 */
+}
+
+/* 各設定セクションのタイトル */
+.settings-section h2 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #c9d1d9;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 8px;
+}
+
+/* 連携ステータス用 */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #238636;
+  color: white;
+  margin-left: 10px;
+}
+
+/* トグルスイッチ（ライト/ダーク切り替え用） */
+.theme-switch-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* 通知設定のチェックボックス並び */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+/* 退会用 */
+.danger-zone {
+  border: 1px solid #f85149; /* 赤い枠線 */
+  background: rgba(248, 81, 73, 0.2);
+}
+
+.danger-zone h2 {
+  color: #f85149;
+  border-bottom: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.btn-danger {
+  background: #da3633;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-danger:hover {
+  background: #f85149;
+}
+
+/* ライトモード用（対応が入っている） */
+:root {
+  --bg-color: #0d1117;
+  --card-bg: #161b22;
+  --text-color: #ffffff;
+}
+
+body.light-theme {
+  background: #f6f8fa !important;
+  color: #24292f !important;
+}
+body.light-theme,
+body.light-theme .sidebar,
+body.light-theme .card,
+body.light-theme .form-container,
+body.light-theme .pipeline-column,
+body.light-theme .job-card {
+  background: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #24292f !important;
+}
+body.light-theme .menu-item:hover {
+  background: #bae6fd !important;
+}
+/* 入力欄（input）もライトモード用に白くする設定を追加 */
+body.light-theme input {
+  background: #ffffff !important;
+  color: #24292f !important;
+  border-color: #d0d7de !important;
+}
+
+/* =================================================== */
+/* 応募管理画面（applications.html）専用追加スタイル */
+/* =================================================== */
+
+/* 求人一覧を包むラッパー */
+.job-list-wrapper {
+  width: 100%;
+}
+
+/* 新規求人を登録するボタンの調整 */
+.nav-register-btn {
+  display: inline-block;
+  width: auto;
+  padding: 10px 20px;
+  text-decoration: none;
+}
+
+/* チームメンバーのベースである「.btn-green」と「.btn-outline」があなたのCSSにない場合の補正設定 */
+.btn.btn-green {
+  background: #238636;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+}
+.btn.btn-green:hover {
+  background: #2ea043;
+}
+
+.btn.btn-outline {
+  background: transparent;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+}
+.btn.btn-outline:hover {
+  background: #21262d;
+}
+.btn-delete {
+  cursor: pointer; /* マウスカーソルを指マークに変える */
+} 
+
+/* 求人が0件のときのカードスタイル */
+.no-jobs-card {
+  text-align: center;
+  color: #8b949e;
+  padding: 50px 20px;
+  font-size: 16px;
+  width: 100%;
+}
+.no-jobs-sub {
+  font-size: 14px;
+  color: #6e7681;
+  margin-top: 10px;
+}
+
+/* 求人カード（1行分）の内部余白や間隔 */
+.job-card-row {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* メタ情報（状態バッジ、求人番号など） */
+.job-card-row .meta-info {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #8b949e;
+  align-items: center;
+}
+
+/* 求人タイトル */
+.job-card-row .job-title {
+  font-size: 18px;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+/* 企業名リンク */
+.job-card-row .company-name {
+  margin-bottom: 15px;
+}
+.job-card-row .company-link {
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: bold;
+}
+.job-card-row .company-link:hover {
+  text-decoration: underline;
+}
+
+/* 特徴タグのレイアウト */
+.job-card-row .tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* タグが空のとき */
+.job-card-row .tag.tag-empty {
+  border-color: #444;
+  background-color: transparent;
+  color: #6e7681;
+}
+
+/* カード内の区切り線 */
+.card-divider {
+  border: 0;
+  border-top: 1px solid #30363d;
+  margin: 15px 0;
+}
+
+/* 条件ブロック（賃金、時間、休日）の横並び */
+.job-card-row .block-conditions {
+  display: flex;
+  gap: 25px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #c9d1d9;
+}
+.job-card-row .cond-label {
+  color: #8b949e;
+  margin-right: 6px;
+}
+
+/* アクションエリア（検討中チェックとボタン群） */
+.job-card-row .block-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+/* --- ライトモード対応の微調整 --- */
+body.light-theme .job-card-row .job-title {
+  color: #24292f !important;
+}
+body.light-theme .card-divider {
+  border-color: #d0d7de !important;
+}
+body.light-theme .job-card-row .tag.tag-empty {
+  border-color: #d0d7de;
+  color: #8b949e;
+}
+
+/* =================================================== */
+/* サイドバー無し版：新規応募登録画面用の追加スタイル */
+/* =================================================== */
+
+/* サイドバー無しの画面でコンテンツを中央寄せにするコンテナ */
+.main-full-width {
+  flex: 1;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 横方向の真ん中寄せ */
+  justify-content: flex-start;
+  min-height: 100vh;
+}
+
+/* 戻るリンクボタン（ヘッダーの上部に小さく表示） */
+.back-to-list-link {
+  color: #8b949e;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 15px;
+  align-self: flex-start; /* 左端に寄せる */
+  transition: color 0.2s;
+}
+.back-to-list-link:hover {
+  color: #7c3aed;
+}
+
+/* 「必須」バッジのデザイン */
+.required-badge {
+  background: #da3633;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-left: 6px;
+  font-weight: bold;
+}
+
+/* 雇用形態セレクトボックスの見た目をinputに合わせる設定 */
+.form-select {
+  width: 100%;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: white;
+  outline: none;
+  cursor: pointer;
+}
+.form-select:focus {
+  border-color: #7c3aed;
+}
+
+/* 特徴・条件のタイトル下余白 */
+.features-title {
+  margin-bottom: 12px !important;
+}
+
+/* チェックボックスを綺麗に並べるGridレイアウト */
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background: #0d1117;
+  padding: 15px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+
+/* 各チェックボックス項目 */
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #c9d1d9;
+}
+.check-item input {
+  cursor: pointer;
+  width: auto !important;
+}
+
+/* --- ライトモード対応 --- */
+body.light-theme .back-to-list-link {
+  color: #57606a;
+}
+body.light-theme .back-to-list-link:hover {
+  color: #7c3aed;
+}
+body.light-theme .form-select {
+  background: #ffffff !important;
+  color: #24292f !important;
+  border-color: #d0d7de !important;
+}
+body.light-theme .checkbox-grid {
+  background: #f6f8fa !important;
+  border-color: #d0d7de !important;
+}
+body.light-theme .check-item {
+  color: #24292f !important;
+}
+
+/* =================================================== */
+/* 🆕 追記：ボタン消去に伴う削除ボタンの安全な右寄せ設定 */
+/* =================================================== */
+.applications-actions {
+  justify-content: flex-end !important;
+}
+.applications-actions .btn-delete {
+  padding: 6px 14px;
+  font-size: 13px;
+}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>応募管理 - 求人一覧</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- 🛠️ 削除ボタンのゴミ箱アイコンを正しく表示させるために修正しました -->
+  <link rel="stylesheet" href="https://cloudflare.com">
+</head>
+<body>
+
+  <h2 style="text-align: center; margin-top: 20px; color: #333;">応募管理 求人一覧</h2>
+  
+  <!-- 新規登録フォームへ移動するボタン -->
+  <div style="max-width: 1100px; margin: 0 auto 20px auto; text-align: right;">
+    <a href="register.html" class="btn btn-green" style="display: inline-block; width: auto; padding: 10px 20px;">＋ 新規求人を登録する</a>
+  </div>
+
+  <!-- ここに登録された求人カードが自動追加されます -->
+  <div id="job-list-container"></div>
+
+  <script>
+    // 💡【修正】拡張機能(content.js)が直接保存する仕組みに変えたため、
+    // ここにあった古い「chrome.runtime.onMessage」の受信処理は完全に削除してスッキリさせました。
+
+    // 📊 画面への表示処理
+    function renderJobList() {
+      const allJobs = JSON.parse(localStorage.getItem('myJobs')) || [];
+      const container = document.getElementById('job-list-container');
+      
+      container.innerHTML = "";
+
+      if (allJobs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: #666; margin-top: 50px; font-size: 16px;">
+            <p>登録されている求人はありません。</p>
+            <p>右上のボタン、または拡張機能から求人を登録してください。</p>
+          </div>
+        `;
+        return;
+      }
+
+      allJobs.forEach(job => {
+        // 特徴タグのHTMLを組み立てる処理
+        let tagsHtml = "";
+        if (job.features && job.features.length > 0) {
+          job.features.forEach(tagText => {
+            tagsHtml += `<span class="tag">${tagText}</span>`;
+          });
+        } else {
+          tagsHtml = `<span class="tag" style="border-color:#ccc; background-color:#fafafa; color:#aaa;">特徴なし</span>`;
+        }
+
+        const cardHtml = `
+          <div class="job-card-row">
+            <div class="block-main">
+              <div class="meta-info">
+                <span class="badge-status">${job.status}</span>
+                <span class="job-number">求人番号：${job.number}</span>
+                <span class="job-location">${job.location}</span>
+              </div>
+              <h3 class="job-title">${job.title}</h3>
+              <p class="company-name"><a href="#" class="company-link">${job.company}</a></p>
+              <div class="tag-container">
+                ${tagsHtml}
+              </div>
+            </div>
+            <div class="block-conditions">
+              <div class="cond-item"><span class="cond-label">賃金</span><span class="cond-value">${job.salary}</span></div>
+              <div class="cond-item"><span class="cond-label">就業時間</span><span class="cond-value">${job.hours}</span></div>
+              <div class="cond-item"><span class="cond-label">休日</span><span class="cond-value">土日祝他</span></div>
+            </div>
+            <div class="block-actions">
+              <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 10px;">
+                <label class="check-label"><input type="checkbox"> 検討中</label>
+                <!-- 🗑️ アイコンが綺麗に出るようになります -->
+                <button class="btn-delete" onclick="deleteJob(${job.id})" title="この求人を削除する">
+                  <i class="fa-regular fa-trash-can"></i> 削除
+                </button>
+              </div>
+              <div class="button-group">
+                <a href="#" class="btn btn-outline">詳細を表示</a>
+                <a href="#" class="btn btn-green">求人票</a>
+              </div>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHtml;
+      });
+    }
+
+    // 🗑️ 削除処理
+    function deleteJob(jobId) {
+      if (confirm('この求人情報を削除してもよろしいですか？')) {
+        let savedJobs = JSON.parse(localStorage.getItem('myJobs')) || [];
+        savedJobs = savedJobs.filter(job => job.id !== jobId);
+        localStorage.setItem('myJobs', JSON.stringify(savedJobs));
+        renderJobList();
+      }
+    }
+
+    renderJobList();
+  </script>
+</body>
+</html>

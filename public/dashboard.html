@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ダッシュボード - JobTracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">JobTracker</div>
+    <a href="dashboard.html" class="menu-item active">ダッシュボード</a>
+    <a href="applications.html" class="menu-item">応募管理</a>
+    <a href="comparison.html" class="menu-item">企業評価・比較</a>
+    <a href="settings.html" class="menu-item">設定</a>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <h1>活動状況ダッシュボード</h1>
+      <!-- ✅ 同期ステータス表示 -->
+      <div id="sync-status" style="font-size: 13px; color: #8b949e; margin-top: 5px;"></div>
+    </div>
+
+    <!-- 統計カード -->
+    <div class="card-container">
+      <div class="card">
+        <h3>総応募数</h3>
+        <h2 id="total-applications">0</h2>
+      </div>
+      <div class="card">
+        <h3>進行中の面接</h3>
+        <h2 id="ongoing-interviews">0</h2>
+      </div>
+      <div class="card">
+        <h3>内定獲得</h3>
+        <h2 id="offer-count-display">0</h2>
+      </div>
+      <div class="card">
+        <h3>書類選考中</h3>
+        <h2 id="status-document">0</h2>
+      </div>
+      <div class="card">
+        <h3>不採用</h3>
+        <h2 id="status-rejected">0</h2>
+      </div>
+    </div>
+
+    <!-- 期限アラート -->
+    <div class="form-container" style="margin-bottom: 30px; max-width: 100%;">
+      <h3 style="margin-bottom: 15px; color: #f85149; font-size: 16px;">⚠️ 期限が近い選考アラート</h3>
+      <div id="alerts-container">
+        <p style="color: #8b949e; font-size: 14px;">読み込み中...</p>
+      </div>
+    </div>
+
+    <!-- 媒体・ステータス集計 -->
+    <div class="form-row" style="margin-bottom: 30px;">
+      <div class="form-container" style="margin-top: 0; max-width: 100%;">
+        <h3 style="margin-bottom: 15px; color: #c9d1d9; font-size: 16px;">📊 応募媒体の内訳</h3>
+        <div id="source-analytics-container">
+          <p style="color: #8b949e; font-size: 14px;">読み込み中...</p>
+        </div>
+      </div>
+      <div class="form-container" style="margin-top: 0; max-width: 100%;">
+        <h3 style="margin-bottom: 15px; color: #c9d1d9; font-size: 16px;">📈 ステータス別の内訳</h3>
+        <div id="status-analytics-container">
+          <p style="color: #8b949e; font-size: 14px;">読み込み中...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- パイプライン追加フォーム -->
+    <div class="form-row" style="margin-bottom: 30px;">
+      <div class="form-container" style="margin-top: 0; max-width: 100%;">
+        <h3 style="margin-bottom: 15px; color: #c9d1d9; font-size: 16px;">📄 書類選考（未対応）に追加</h3>
+        <form id="doc-form" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label>企業を選ぶ</label>
+            <select id="doc-company-select" class="form-select" required>
+              <option value="">-- 企業を選択 --</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label>提出期日</label>
+            <input type="date" id="doc-deadline" required>
+          </div>
+          <button type="submit" class="btn-submit" style="padding: 12px 20px;">追加</button>
+        </form>
+      </div>
+
+      <div class="form-container" style="margin-top: 0; max-width: 100%;">
+        <h3 style="margin-bottom: 15px; color: #c9d1d9; font-size: 16px;">🤝 面接（進行中）に追加</h3>
+        <form id="interview-form" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label>企業を選ぶ</label>
+            <select id="interview-company-select" class="form-select" required>
+              <option value="">-- 企業を選択 --</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; min-width: 150px;">
+            <label>面接日時</label>
+            <input type="datetime-local" id="interview-date" required>
+          </div>
+          <button type="submit" class="btn-submit" style="padding: 12px 20px;">追加</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- パイプライン一覧 -->
+    <div class="pipeline">
+      <div class="pipeline-column">
+        <h3>書類選考（未対応）</h3>
+        <div id="document-pipeline-list"></div>
+      </div>
+      <div class="pipeline-column">
+        <h3>面接（進行中）</h3>
+        <div id="interview-pipeline-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 💾 localStorageからデータを取得する関数
+    function getSavedData(key) {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }
+
+    // ✅ Gmail自動同期（30分以上経過した場合のみ実行）
+    async function autoSyncGmailIfNeeded(token) {
+      const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30分をミリ秒に変換
+      const lastSynced = localStorage.getItem('lastGmailSync');
+      const now = Date.now();
+      const syncStatus = document.getElementById('sync-status');
+
+      // 前回の同期から30分経っていなければスキップ
+      if (lastSynced && (now - parseInt(lastSynced)) < SYNC_INTERVAL_MS) {
+        const minutesAgo = Math.floor((now - parseInt(lastSynced)) / 60000);
+        syncStatus.textContent = `📬 最終Gmail同期: ${minutesAgo}分前`;
+        return;
+      }
+
+      // 30分以上経過 → 同期を実行
+      syncStatus.textContent = '📬 Gmailを同期中...';
+
+      try {
+        const res = await fetch('http://localhost:3000/api/applications/sync-gmail', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          // 同期成功 → 最終同期時刻を保存
+          localStorage.setItem('lastGmailSync', String(now));
+
+          if (data.importedCount > 0) {
+            // 新着メールがあった場合
+            syncStatus.innerHTML = `✅ Gmail同期完了（${data.importedCount}件取り込み）`;
+          } else {
+            // 新着なし
+            syncStatus.textContent = '✅ Gmail同期完了（新着なし）';
+          }
+        } else {
+          // Gmail未連携など（エラーでも画面表示は続行）
+          syncStatus.textContent = '📭 Gmail未連携（settings から連携できます）';
+        }
+
+      } catch (err) {
+        // ネットワークエラーなどでも画面表示は続行
+        console.error('Gmail同期エラー:', err);
+        syncStatus.textContent = '⚠️ Gmail同期に失敗しました';
+      }
+    }
+
+    // 期限アラートを表示する関数
+    async function loadAlerts(token) {
+      const container = document.getElementById('alerts-container');
+      try {
+        const res = await fetch('http://localhost:3000/api/applications/alerts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const alerts = data.alerts || [];
+
+        if (alerts.length === 0) {
+          container.innerHTML = '<p style="color: #8b949e; font-size: 14px;">期限が近い選考はありません。</p>';
+          return;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        container.innerHTML = alerts.map(app => {
+          const deadline = new Date(app.deadlineDate);
+          const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+          const urgencyColor = diffDays <= 3 ? '#f85149' : diffDays <= 7 ? '#f0883e' : '#3fb950';
+          const urgencyText = diffDays < 0 ? '⚠️ 期限切れ' : `残り ${diffDays} 日`;
+
+          return `
+            <div class="job-card" style="border-left: 4px solid ${urgencyColor}; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 5px 0;">${app.companyName} <span style="font-size: 13px; color: #8b949e;">[${app.jobTitle}]</span></h4>
+                <p style="margin: 0; font-size: 13px; color: #8b949e;">ステータス: ${app.status} ｜ 期限: ${app.deadlineDate}</p>
+              </div>
+              <span style="color: ${urgencyColor}; font-weight: bold; font-size: 14px; white-space: nowrap; margin-left: 15px;">${urgencyText}</span>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('アラートの取得に失敗:', err);
+        container.innerHTML = '<p style="color: #8b949e; font-size: 14px;">アラートの取得に失敗しました。</p>';
+      }
+    }
+
+    // 媒体・ステータス集計を表示する関数
+    async function loadAnalytics(token) {
+      const sourceContainer = document.getElementById('source-analytics-container');
+      const statusContainer = document.getElementById('status-analytics-container');
+      try {
+        const res = await fetch('http://localhost:3000/api/applications/analytics/source', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const bySource = data.analytics?.bySource || {};
+        const byStatus = data.analytics?.byStatus || {};
+        const total = data.totalCount || 1;
+
+        document.getElementById('offer-count-display').textContent = byStatus['内定'] || 0;
+        document.getElementById('status-document').textContent = byStatus['書類選考中'] || 0;
+        document.getElementById('status-rejected').textContent = byStatus['不採用'] || 0;
+
+        sourceContainer.innerHTML = Object.keys(bySource).length === 0
+          ? '<p style="color: #8b949e; font-size: 14px;">データがありません。</p>'
+          : Object.entries(bySource).map(([name, count]) => {
+              const pct = Math.round((count / total) * 100);
+              return `
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 13px; color: #c9d1d9; margin-bottom: 4px;">
+                    <span>${name}</span><span>${count}件 (${pct}%)</span>
+                  </div>
+                  <div style="background: #21262d; border-radius: 4px; height: 8px;">
+                    <div style="background: #7c3aed; width: ${pct}%; height: 8px; border-radius: 4px;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+        const statusColors = {
+          '書類選考中': '#3fb950', '面接待ち': '#f0883e',
+          '不採用': '#f85149', '内定': '#58a6ff', '応募中': '#8b949e'
+        };
+        statusContainer.innerHTML = Object.keys(byStatus).length === 0
+          ? '<p style="color: #8b949e; font-size: 14px;">データがありません。</p>'
+          : Object.entries(byStatus).map(([name, count]) => {
+              const pct = Math.round((count / total) * 100);
+              const color = statusColors[name] || '#8b949e';
+              return `
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 13px; color: #c9d1d9; margin-bottom: 4px;">
+                    <span>${name}</span><span>${count}件 (${pct}%)</span>
+                  </div>
+                  <div style="background: #21262d; border-radius: 4px; height: 8px;">
+                    <div style="background: ${color}; width: ${pct}%; height: 8px; border-radius: 4px;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('');
+      } catch (err) {
+        console.error('統計データの取得に失敗:', err);
+      }
+    }
+
+    // 🔄 画面全体を更新するメイン処理
+    async function refreshDashboard() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // ✅ まずGmail同期を試みる（30分ルール適用）
+      await autoSyncGmailIfNeeded(token);
+
+      // その後にデータ取得・描画（同期後の最新データが反映される）
+      let myJobs = [];
+      try {
+        const res = await fetch('http://localhost:3000/api/applications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        myJobs = data.applications || [];
+        document.getElementById('total-applications').textContent = data.count || myJobs.length;
+      } catch (err) {
+        console.error('応募データの取得に失敗:', err);
+      }
+
+      await Promise.all([
+        loadAlerts(token),
+        loadAnalytics(token)
+      ]);
+
+      const docPipeline = getSavedData('docPipeline');
+      const interviewPipeline = getSavedData('interviewPipeline');
+      document.getElementById('ongoing-interviews').textContent = interviewPipeline.length;
+
+      const docSelect = document.getElementById('doc-company-select');
+      const interviewSelect = document.getElementById('interview-company-select');
+      docSelect.innerHTML = '<option value="">-- 企業を選択 --</option>';
+      interviewSelect.innerHTML = '<option value="">-- 企業を選択 --</option>';
+
+      myJobs.forEach(job => {
+        const optionText = `${job.companyName} (${job.jobTitle})`;
+        const opt1 = document.createElement('option');
+        opt1.value = optionText;
+        opt1.textContent = optionText;
+        docSelect.appendChild(opt1);
+        interviewSelect.appendChild(opt1.cloneNode(true));
+      });
+
+      const docListContainer = document.getElementById('document-pipeline-list');
+      docListContainer.innerHTML = docPipeline.length === 0
+        ? '<p style="color: #8b949e; margin-top: 15px; font-size: 14px;">登録された書類選考はありません。</p>'
+        : docPipeline.map((item, index) => `
+            <div class="job-card" style="position: relative;">
+              <h4>${item.companyInfo}</h4>
+              <p>📅 提出期日: ${item.deadline}</p>
+              <button onclick="removePipelineItem('docPipeline', ${index})" style="position: absolute; top: 10px; right: 10px; background: transparent; color: #f85149; border: none; cursor: pointer; font-size: 12px;">削除</button>
+            </div>
+          `).join('');
+
+      const interviewListContainer = document.getElementById('interview-pipeline-list');
+      interviewListContainer.innerHTML = interviewPipeline.length === 0
+        ? '<p style="color: #8b949e; margin-top: 15px; font-size: 14px;">登録された面接予定はありません。</p>'
+        : interviewPipeline.map((item, index) => `
+            <div class="job-card" style="position: relative;">
+              <h4>${item.companyInfo}</h4>
+              <p>⏰ 面接日時: ${item.date.replace('T', ' ')}</p>
+              <button onclick="removePipelineItem('interviewPipeline', ${index})" style="position: absolute; top: 10px; right: 10px; background: transparent; color: #f85149; border: none; cursor: pointer; font-size: 12px;">削除</button>
+            </div>
+          `).join('');
+    }
+
+    document.getElementById('doc-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const companyInfo = document.getElementById('doc-company-select').value;
+      const deadline = document.getElementById('doc-deadline').value;
+      const docPipeline = getSavedData('docPipeline');
+      docPipeline.push({ companyInfo, deadline });
+      localStorage.setItem('docPipeline', JSON.stringify(docPipeline));
+      document.getElementById('doc-form').reset();
+      refreshDashboard();
+    });
+
+    document.getElementById('interview-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const companyInfo = document.getElementById('interview-company-select').value;
+      const date = document.getElementById('interview-date').value;
+      const interviewPipeline = getSavedData('interviewPipeline');
+      interviewPipeline.push({ companyInfo, date });
+      localStorage.setItem('interviewPipeline', JSON.stringify(interviewPipeline));
+      document.getElementById('interview-form').reset();
+      refreshDashboard();
+    });
+
+    function removePipelineItem(key, index) {
+      const pipeline = getSavedData(key);
+      pipeline.splice(index, 1);
+      localStorage.setItem(key, JSON.stringify(pipeline));
+      refreshDashboard();
+    }
+
+    window.onload = function() {
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light-theme');
+      }
+      refreshDashboard();
+    };
+  </script>
+</body>
+</html>
