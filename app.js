@@ -30,28 +30,11 @@ app.get('/debug-env', (req, res) => {
 
 app.get('/debug-oauth', (req, res) => {
     res.json({
-        clientId: googleConfig.clientId ? "値あり" : "値なし",
-        redirectUri: googleConfig.redirectUri,
+        clientId: process.env.GOOGLE_CLIENT_ID ? "値あり" : "値なし",
+        redirectUri: process.env.GOOGLE_REDIRECT_URI,
     });
 });
 
-//credentials.json から設定を読み込む初期化処理
-const credentialsPath = path.join(__dirname, 'credentials.json');   //__は今いるパスを指定している
-let googleConfig = {};
-
-if (fs.existsSync(credentialsPath)) {
-    const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
-    // web型かinstalled型かで階層が違うための対策
-    const clientInfo = credentials.web || credentials.installed;
-    
-    if (clientInfo) {
-        googleConfig = {
-            clientId: clientInfo.client_id,
-            clientSecret: clientInfo.client_secret,
-            redirectUri: process.env.GOOGLE_REDIRECT_URI
-        };
-    }
-}
 
 // OAuth2 クライアントを生成するヘルパー関数
 function createOAuth2Client() {
