@@ -28,6 +28,13 @@ app.get('/debug-env', (req, res) => {
     });
 });
 
+app.get('/debug-oauth', (req, res) => {
+    res.json({
+        clientId: googleConfig.clientId ? "値あり" : "値なし",
+        redirectUri: googleConfig.redirectUri,
+    });
+});
+
 //credentials.json から設定を読み込む初期化処理
 const credentialsPath = path.join(__dirname, 'credentials.json');   //__は今いるパスを指定している
 let googleConfig = {};
