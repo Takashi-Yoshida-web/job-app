@@ -19,6 +19,15 @@ app.use(cors({ origin: 'http://127.0.0.1:5500' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+// デバッグ用（確認後に削除）
+app.get('/debug-env', (req, res) => {
+    res.json({
+        clientId: process.env.GOOGLE_CLIENT_ID ? "値あり" : "値なし",
+        redirectUri: process.env.GOOGLE_REDIRECT_URI ? "値あり" : "値なし",
+    });
+});
+
 //credentials.json から設定を読み込む初期化処理
 const credentialsPath = path.join(__dirname, 'credentials.json');   //__は今いるパスを指定している
 let googleConfig = {};
