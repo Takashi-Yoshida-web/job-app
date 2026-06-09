@@ -125,7 +125,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
 
         // 本番ではフロントエンドの「連携完了ページ」のURLにリダイレクトさせます
         // 3. 連携完了画面へリダイレクト
-        const FRONTEND_URL = 'http://127.0.0.1:5500/applications.html';
+        const FRONTEND_URL = 'https://job-app--job-app-874ad.asia-east1.hosted.app/applications.html';
         res.redirect(`${FRONTEND_URL}?gmail_sync=success`);
     } catch (error) {
         console.error("[Googleコールバックエラー]:", error);
