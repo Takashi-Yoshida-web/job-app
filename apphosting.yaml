@@ -1,20 +1,18 @@
-scripts:
-  buildCommand: next build --no-lint
-  runCommand: node dist/index.js
-  
-runConfig:
-  runtime: nodejs20
 
-env:
-  - variable: CRON_SECRET
-    secret: CRON_SECRET
-    availability:
-      - RUNTIME
-  - variable: GMAIL_NOTIFY_USER
-    secret: GMAIL_NOTIFY_USER
-    availability:
-      - RUNTIME
-  - variable: GMAIL_NOTIFY_APP_PASSWORD
-    secret: GMAIL_NOTIFY_APP_PASSWORD
-    availability:
-      - RUNTIME
+  
+# runConfig:
+#   runtime: nodejs20
+
+# env:
+#   - variable: CRON_SECRET
+#     secret: CRON_SECRET
+#     availability:
+#       - RUNTIME
+#   - variable: GMAIL_NOTIFY_USER
+#     secret: GMAIL_NOTIFY_USER
+#     availability:
+#       - RUNTIME
+#   - variable: GMAIL_NOTIFY_APP_PASSWORD
+#     secret: GMAIL_NOTIFY_APP_PASSWORD
+#     availability:
+#       - RUNTIME
