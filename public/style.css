@@ -27,6 +27,19 @@ body {
   margin-bottom: 30px;
 }
 
+/* ロゴのリンク用スタイル */
+.logo a {
+  text-decoration: none; /* 下線を消す */
+  color: inherit;         /* 親の文字色（白や黒をそのまま引き継ぐ） */ 
+  display: block;         /* クリックできるエリアを広げる */
+  transition: opacity 0.2s ease;  /* マウスを乗せた時の動きを滑らかにする */
+}
+
+/* マウスを乗せた時に、少し優しく光る（透明度を下げる）演出 */
+.logo a:hover {
+  opacity: 0.8;
+}
+
 /* メニュー項目の共通設定 */
 .menu-item {
   display: block;      /* リンクを箱の形にする */
