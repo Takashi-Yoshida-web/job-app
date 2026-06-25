@@ -118,12 +118,13 @@
     };
 
    // プロフィール情報をAPIから取得して画面に反映
-    async function loadProfile() {
+   async function loadProfile() {
       const token = localStorage.getItem('token');
       if (!token) {
         window.location.href = 'index.html';
         return;
       }
+    
       try {
         const res = await fetch(`${API_BASE}/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -144,14 +145,29 @@
           statusBadge.style.background = '';
           gmailBtn.textContent = '連携解除';
     
-          if (data.user.lastGmailSync) {
-            const minutesAgo = Math.floor((Date.now() - new Date(data.user.lastGmailSync).getTime()) / 60000);
-            lastSyncText.textContent = minutesAgo < 1
-              ? '最終同期：たった今'
-              : `最終同期：${minutesAgo}分前`;
-          } else {
-            lastSyncText.textContent = '最終同期：まだ同期されていません';
+          // 同期時刻を表示する関数
+          async function updateSyncText() {
+            try {
+              const freshRes = await fetch(`${API_BASE}/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              const freshData = await freshRes.json();
+              if (freshData.user.lastGmailSync) {
+                const minutesAgo = Math.floor((Date.now() - new Date(freshData.user.lastGmailSync).getTime()) / 60000);
+                lastSyncText.textContent = minutesAgo < 1
+                  ? '最終同期：たった今'
+                  : `最終同期：${minutesAgo}分前`;
+              } else {
+                lastSyncText.textContent = '最終同期：まだ同期されていません';
+              }
+            } catch (err) {
+              console.error('同期時刻の更新に失敗:', err);
+            }
           }
+    
+          await updateSyncText();            // 最初に1回実行
+          setInterval(updateSyncText, 60000); // 1分ごとに更新
+    
         } else {
           statusBadge.textContent = '未連携';
           statusBadge.style.background = '#8b949e';
