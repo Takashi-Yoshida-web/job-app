@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポートフォリオ作成者のプロフィール</title>
+
+    <!-- 📊 Chart.js 最新安定版(v4)の読み込み（これが必須です） -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="logo">JobTracker</div>
+        <a href="dashboard.html" class="menu-item">ダッシュボード</a>
+        <a href="applications.html" class="menu-item">応募管理</a>
+        <a href="comparison.html" class="menu-item">企業評価・比較</a>
+        <a href="profile.html" class="menu-item">プロフィール</a>
+        <a href="settings.html" class="menu-item">設定</a>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h1>ポートフォリオ作成者のプロフィール</h1>
+        </div>
+        <div class="profile-container">
+            <header class="profile-header">
+                <p>ポリテクセンター沖縄での成果と共同開発メンバーの足跡</p>
+            </header>
+            <!-- 4名切り替えタブ -->
+            <nav class="tabs">
+                <button class="tab-btn active" onclick="switchMember('frontend1', event)">フロントエンド①</button>
+                <button class="tab-btn" onclick="switchMember('frontend2', event)">フロントエンド②</button>
+                <button class="tab-btn" onclick="switchMember('backend', event)">バックエンド</button>
+                <button class="tab-btn" onclick="switchMember('database', event)">データベース</button>
+            </nav>
+            <main class="content">
+                <div class="profile-section">
+                    <!-- 左側：チャート表示領域 -->
+                    <section class="chart-container">
+                        <h3 id="member-role" class="profile-member-role">担当：<ruby>島袋 <rt>シマブクロ</rt> 駿 <rt>シュン</rt></ruby></h3>
+                        <!-- 💡 ここにタイトルを追加します -->
+                        <p class="chart-title">📊 自己習得評価（5段階）</p>
+                        <div class="canvas-wrapper">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </section>
+                    <!-- 右側：テキストプロフィール項目 -->
+                    <section class="info-container">
+                        <div class="info-block">
+                            <h4>💡 得意なこと（もの）</h4>
+                            <p id="text-tokui">読み込み中...</p>
+                        </div>
+
+                        <div class="info-block">
+                            <h4>❤️ 好きなこと（もの）</h4>
+                            <p id="text-suki">読み込み中...</p>
+                        </div>
+
+                        <div class="info-block">
+                            <h4>🎨 趣味</h4>
+                            <p id="text-shumi">読み込み中...</p>
+                        </div>
+
+                        <div class="info-block dream-block">
+                            <h4>🚀 エンジニアとしての目指す道</h4>
+                            <p id="text-michi">読み込み中...</p>
+                        </div>
+                    </section>
+                </div>
+            </main>
+            <footer>
+            <p>&copy; 2026 ポートフォリオ共同作成チーム | ポリテクセンター沖縄</p>
+            </footer>
+        </div>
+    </div>
+    <!-- 動的処理（JavaScript） -->
+    <script>
+        // 💡 メンバー4名のデータを定義（名前のルビ・スコア・詳細テキスト）
+        // 自己評価の並び順: [1.ネットワーク, 2.プログラミング, 3.データベース, 4.Web開発, 5.IoT技術, 6.Java]
+        const memberData = {
+            frontend1: {
+                role: "担当者名：⑪<ruby> 島袋 <rt> シマブクロ </rt> 駿 <rt>シュン</rt></ruby>",
+                scores:[2,3,2,3,3,2],
+                tokui: "歯笛😬",
+                suki: "SnowMan🎧",
+                shumi: "スマホゲーム🎮",
+                michi: "プログラマーとして技術を磨き、将来は人を育てる教育者や指導者を目指します。🧑🏻‍🏫"
+            },
+            frontend2: {
+                role: "担当者名：⑩<ruby> 具志堅 <rt> グシケン </rt> 耕一郎 <rt> コウイチロウ </rt></ruby>",
+                scores:[2,2,3,2,2,2],
+                tokui: "👁️人間観察👁️",
+                suki: "料理(得意料理：プレーンオムレツ🍳)",
+                shumi: "競馬🏇🏻",
+                michi: "最新のAI技術（生成AIなど）を既存システムに組み込めるエンジニアになる🤖"
+            },
+            backend: {
+                role: "担当者名：㉓<ruby> 前底 <rt> マエソコ </rt> 恭太 <rt> キョウタ </rt></ruby>",
+                scores:[2,3,3,3,3,3],
+                tokui: "ワイン・シャンパン🍾を恰好良く抜栓できます😎",
+                suki: "お酒を飲むこと🍷スポーツ観戦（サッカー、F1、競馬、e-sports）",
+                shumi: "お風呂につかること♨️サウナ🧖🏻‍♂️",
+                michi: "プロのエンジニアとして、沖縄県の生産性があがるようなものを作り、発展に貢献したい！🌟"
+            },
+            database: {
+                role: "担当者名：㉒<ruby>濱元 <rt> ハマモト </rt> 優輝 <rt> ユウキ </rt></ruby>",
+                scores:[3,2,5,2,3,4],
+                tokui: "節約💵",
+                suki: "散歩🚶🏻",
+                shumi: "映画鑑賞🎦",
+                michi: "サーバーやシステムの基盤を安全に支えていけるインフラエンジニアとして活躍したい🧑🏻‍💻"
+            }
+        };
+
+        // 💡 改行に対応した軸ラベル（ポリテクセンター沖縄で学んだこと）
+        const chartLabels = [
+            ['1. ネットワーク/', 'サーバー構築'],
+            ['2. プログラミング', '(Java/Android)'],
+            ['3. データベース', '(SQLなど)'],
+            ['4. Web開発', '(HTML/CSS/JS)'],
+            '5. IoT技術',
+            '6. Java'
+        ];
+
+        // グラフオブジェクトを記憶するための変数
+        let myRadarChart = null;
+
+        // 📊 ページ読み込み時に、1回だけグラフの「枠組み」を作成する関数
+        function createInitialChart(initialScores) {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            myRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: '学んだことの自己評価',
+                        data: initialScores,
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)', // グラフの中身の色
+                        borderColor: 'rgba(52, 152, 219, 1)',     // 線の色
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(44, 62, 80, 1)',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // アニメーションの速度と滑らかな減速（プロ風の動き）を指定
+                    animation: {
+                        duration: 2000,       /* 0.75秒かけて変形 */
+                        easing: 'easeOutQuart' /* なめらかな減速 */
+                    },
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 5,
+                            beginAtZero: true,
+                            grid: {
+                                // ダークモード用に目盛り線の視認性をアップ
+                                color: 'rgba(255, 255, 255, 0.35)',
+                                lineWidth: 1
+                            },
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.25)'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                font: { size: 10 }
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 11,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false } // 凡例は非表示
+                    }
+                }
+            });
+        }
+
+        // 🔄 タブクリック時にデータだけを書き換えてなめらかに変形させる関数
+        function switchMember(memberKey, event) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // イベントがある場合（クリック時）はそのボタンをアクティブに
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            const data = memberData[memberKey];
+            if (!data) return;
+
+            // HTML側の各パーツにデータを流し込む（ID名を完全に一致させています）
+            document.getElementById('member-role').innerHTML = data.role;
+            document.getElementById('text-tokui').innerText = data.tokui;
+            document.getElementById('text-suki').innerText = data.suki; // 👈 text-ryoriからtext-sukiに修正
+            document.getElementById('text-shumi').innerText = data.shumi;
+            document.getElementById('text-michi').innerText = data.michi;
+
+            // 💡 グラフのデータだけを上書きして、ぬるぬる変形するアニメーションを実行
+            if (myRadarChart !== null) {
+                myRadarChart.data.datasets[0].data = data.scores;
+                myRadarChart.update();
+            }
+        }
+    
+        // 🚀 ページが読み込まれた瞬間の処理
+        window.onload = function() {
+            // フロントエンド①のデータでグラフの枠組みを作成
+            createInitialChart(memberData.frontend1.scores);
+            // テキスト情報をセット
+            switchMember('frontend1', null);
+            // 最初のタブボタンをアクティブにする
+            const firstTab = document.querySelector('.tab-btn');
+            if (firstTab) firstTab.classList.add('active');
+
+            // ライトモードの動的テーマ対応
+            if (localStorage.getItem('theme') === 'light') {
+                document.body.classList.add('light-theme');
+                if (myRadarChart) {
+                    myRadarChart.options.scales.r.grid.color = 'rgba(0, 0, 0, 0.15)';
+                    myRadarChart.options.scales.r.angleLines.color = 'rgba(0, 0, 0, 0.1)';
+                    myRadarChart.options.scales.r.pointLabels.color = '#24292f';
+                    myRadarChart.update();
+                }
+            }
+        };
+    </script>
+</body>
+</html>

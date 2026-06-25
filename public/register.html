@@ -28,26 +28,27 @@
       </form>
 
       <div class="auth-footer">
-        すでにアカウントをお持ちですか？<a href="login.html">ログイン</a>
+        すでにアカウントをお持ちですか？<a href="index.html">ログイン</a>
       </div>
     </div>
   </div>
   <script>
   async function handleRegister(event) {
     event.preventDefault();
+    const username = document.querySelector('input[type="text"]').value;
     const email = document.querySelector('input[type="email"]').value;
     const password = document.querySelector('input[type="password"]').value;
 
     const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ username, email, password })
     });
 
     const data = await res.json();
     if (res.ok) {
       alert('登録が完了しました！');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     } else {
       alert(data.message);
     }

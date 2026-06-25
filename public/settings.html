@@ -11,7 +11,7 @@
     <a href="dashboard.html" class="menu-item">ダッシュボード</a>
     <a href="applications.html" class="menu-item">応募管理</a>
     <a href="comparison.html" class="menu-item">企業評価・比較</a>
-
+    <a href="profile.html" class="menu-item">プロフィール</a>    
     <a href="settings.html" class="menu-item active">設定</a>
   </div>
   <div class="main">
@@ -26,21 +26,21 @@
           <div class="form-row">
             <div class="form-group">
               <label>ユーザー名</label>
-              <input type="text" value="ポリテク 三郎" required>
+              <input type="text" id="setting-username" required>
             </div>
             <div class="form-group">
               <label>メールアドレス</label>
-              <input type="email" value="aaaaaa@mail.com" required>
+              <input type="email" id="setting-email" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>新しいパスワード</label>
-              <input type="password" placeholder="変更する場合のみ入力">
+              <input type="password" id="setting-new-password" placeholder="変更する場合のみ入力" autocomplete="new-password">
             </div>
             <div class="form-group">
               <label>パスワード（確認）</label>
-              <input type="password" placeholder="変更する場合のみ入力">
+              <input type="password" id="setting-new-password-confirm" placeholder="変更する場合のみ入力" autocomplete="new-password">
             </div>
           </div>
           <div class="form-actions">
@@ -55,6 +55,7 @@
           <label class="theme-switch-label">
             <span>ライトモードを有効にする</span>
             <input type="checkbox" id="theme-toggle" onchange="toggleTheme()">
+            <span class="toggle-slider"></span>
           </label>
         </div>
       </div>
@@ -64,28 +65,26 @@
         <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
           <div>
             <span style="font-weight: bold;">Gmail自動連係</span>
-            <span class="status-badge" id="gmail-status">連携中</span>
-            <p style="color: #8b949e; font-size: 14px; margin-top: 5px;">最終同期：〇分前</p>
+            <span class="status-badge" id="gmail-status">未連携</span>
+            <p style="color: #8b949e; font-size: 14px; margin-top: 5px;" id="gmail-last-sync">最終同期：未連携</p>
           </div>
-          <button class="btn-cancel" id="gmail-btn" onclick="toggleGmail()" style="padding: 8px 16px;">連係解除</button>
+          <button class="btn-cancel" id="gmail-btn" onclick="toggleGmail()" style="padding: 8px 16px;">連携する</button>
         </div>
       </div>
+      
       <div class="card settings-section">
         <h2>通知設定</h2>
         <div class="checkbox-group">
           <label class="checkbox-label">
-            <input type="checkbox" checked>
-            <span>面接スケジュールの前日リマインド通知を受け取る</span>
+            <input type="checkbox" class="notify-check" data-type="interview" checked>
+            <span>面接スケジュールの当日リマインド通知を受け取る</span>
           </label>
           <label class="checkbox-label">
-            <input type="checkbox" checked>
-            <span>Gmailから新しい応募情報を取り込んだときに通知する</span>
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox">
-            <span>選考ステータスに動きがない企業のアラート通知</span>
+            <input type="checkbox" class="notify-check" data-type="document" checked>
+            <span>書類選考（未対応）の当日リマインド通知を受け取る</span>
           </label>
         </div>
+        <button class="auth-btn" style="margin-top: 15px;" onclick="saveNotifications()">通知設定を保存</button>
       </div>
       <div class="card settings-section danger-zone">
         <h2>危険ゾーン</h2>
@@ -94,14 +93,16 @@
             <span style="font-weight: bold; color: #f85149;">アカウント削除</span>
             <p style="color: #8b949e; font-size: 14px; margin-top: 5px;">全ての応募データ、企業評価が完全に削除され、復元できなくなります</p>
           </div>
-          <button class="btn-danger" onclick="deleteAccout()">退会する</button>
+          <button class="btn-danger" onclick="deleteAccount()">退会する</button>
         </div>
       </div>
     </div>
   </div>
   <script>
+    const API_BASE = 'https://job-app--job-app-874ad.asia-east1.hosted.app';
+
     // ページが読み込まれた瞬間に実行される処理
-    window.onload = function() {
+    window.onload = async function() {
       const savedTheme = localStorage.getItem('theme');
       const checkbox = document.getElementById('theme-toggle');
 
@@ -110,10 +111,57 @@
         document.body.classList.add('light-theme');
         if (checkbox) checkbox.checked = true;
       }
-      
-      // 最初は画面の見た目を「未連携（または連携解除中）」にしておくのが安全です
-      // 初期状態のコントロールをここで行うことも可能です
+
+      await loadProfile();
     };
+
+   // プロフィール情報をAPIから取得して画面に反映
+    async function loadProfile() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'index.html';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('プロフィール取得に失敗しました');
+    
+        const data = await res.json();
+        document.getElementById('setting-username').value = data.user.username || '';
+        document.getElementById('setting-email').value = data.user.email || '';
+    
+        // Gmail連携状態の表示
+        const statusBadge = document.getElementById('gmail-status');
+        const gmailBtn = document.getElementById('gmail-btn');
+        const lastSyncText = document.getElementById('gmail-last-sync');
+    
+        if (data.user.gmailRefreshToken) {
+          statusBadge.textContent = '連携中';
+          statusBadge.style.background = '';
+          gmailBtn.textContent = '連携解除';
+    
+          if (data.user.lastGmailSync) {
+            const minutesAgo = Math.floor((Date.now() - new Date(data.user.lastGmailSync).getTime()) / 60000);
+            lastSyncText.textContent = minutesAgo < 1
+              ? '最終同期：たった今'
+              : `最終同期：${minutesAgo}分前`;
+          } else {
+            lastSyncText.textContent = '最終同期：まだ同期されていません';
+          }
+        } else {
+          statusBadge.textContent = '未連携';
+          statusBadge.style.background = '#8b949e';
+          gmailBtn.textContent = '連携する';
+          lastSyncText.textContent = '最終同期：未連携';
+        }
+    
+      } catch (error) {
+        console.error('エラー:', error);
+        alert('プロフィール情報の取得に失敗しました。');
+      }
+    }
 
     // テーマ切り替え（記憶を保存する機能付き）
     function toggleTheme() {
@@ -127,10 +175,48 @@
       }
     }
 
-    // プロフィール保存
-    function saveProfile(event) {
+    // プロフィール保存（ユーザー名・メール・パスワード変更）
+    async function saveProfile(event) {
       event.preventDefault();
-      alert('アカウント情報を更新しました。');
+
+      const token = localStorage.getItem('token');
+      const username = document.getElementById('setting-username').value;
+      const email = document.getElementById('setting-email').value;
+      const newPassword = document.getElementById('setting-new-password').value;
+      const newPasswordConfirm = document.getElementById('setting-new-password-confirm').value;
+
+      // パスワード変更時は確認用と一致しているかチェック
+      if (newPassword || newPasswordConfirm) {
+        if (newPassword !== newPasswordConfirm) {
+          alert('新しいパスワードと確認用パスワードが一致しません。');
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/user/update`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username, email, newPassword })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert('アカウント情報を更新しました。');
+          document.getElementById('setting-new-password').value = '';
+          document.getElementById('setting-new-password-confirm').value = '';
+        } else {
+          alert(data.message || '更新に失敗しました。');
+        }
+
+      } catch (error) {
+        console.error('エラー:', error);
+        alert('通信エラーが発生しました。');
+      }
     }
 
     // 🔗 Gmail連携の切り替え ＆ API接続処理
@@ -138,18 +224,32 @@
       const statusBadge = document.getElementById('gmail-status');
       const gmailBtn = document.getElementById('gmail-btn');
 
-      // 【パターンA】現在すでに「連携中」の場合（解除する処理）
-      if (statusBadge.textContent === '連携中') {
+      // 【パターンA】現在すでに「連携中」の場合（解除する処理)
+       if (statusBadge.textContent === '連携中') {
         if (confirm('本当にGmailとの自動連係を解除しますか？\n解除するとメールからの自動取り込みが停止します。')) {
-          
-          // 💡 ここに将来的にバックエンドの「連携解除API（DELETEなど）」を呼ぶ処理を入れます
-          
-          statusBadge.textContent = '連携解除中';  // バッジの文字を変更
-          statusBadge.style.background = '#8b949e'; // バッジの色をグレー（未連携色）に変更
-          gmailBtn.textContent = '連携する'; // ボタンの文字を「連携する」に変更
-          alert('連携を解除しました。');
+
+          const token = localStorage.getItem('token');
+
+          try {
+            const res = await fetch(`${API_BASE}/api/auth/google/disconnect`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('連携解除に失敗しました');
+
+            statusBadge.textContent = '未連携';
+            statusBadge.style.background = '#8b949e';
+            gmailBtn.textContent = '連携する';
+            document.getElementById('gmail-last-sync').textContent = '最終同期：未連携';
+            alert('連携を解除しました。');
+
+          } catch (error) {
+            console.error('エラー:', error);
+            alert('連携解除に失敗しました。もう一度お試しください。');
+          }
         }
-      } 
+      }
       // 【パターンB】現在「未連携・連携解除中」の場合（新しく認証を開始する処理）
       else {
         if (!confirm('Gmailとの自動連係を開始しますか？\nGoogleのログイン画面へ移動します。')) {
@@ -161,16 +261,16 @@
 
         if (!token) {
           alert('ログインセッションが切れています。再ログインしてください。');
-          window.location.href = 'login.html'; // ログイン画面へ飛ばす
+          window.location.href = 'index.html'; // ログイン画面へ飛ばす
           return;
         }
 
         try {
           // 1. バックエンドにGoogleの認証URLを要求する
-          const response = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/auth/google/url', {
+          const response = await fetch(`${API_BASE}/api/auth/google/url`, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${token}` // 🔒 会員証（トークン）を添付！
+              'Authorization': `Bearer ${token}` //  会員証（トークン）を添付！
             }
           });
 
@@ -192,14 +292,50 @@
       }
     }
 
+    // 通知設定を保存する処理
+    function saveNotifications() {
+      const checks = document.querySelectorAll('.notify-check');
+      const settings = {
+        interview: checks[0].checked,
+        document: checks[1].checked
+      };
+      localStorage.setItem('notificationSettings', JSON.stringify(settings));
+      alert('通知設定を保存しました！');
+    }
+
+    // ページを開いたときに保存されたチェック状態を復元する処理
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('notificationSettings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        const checks = document.querySelectorAll('.notify-check');
+        if (checks.length >= 2) {
+          checks[0].checked = settings.interview;
+          checks[1].checked = settings.document;
+        }
+      }
+    });
+
     // アカウント退会（2段階チェック）
-    function deleteAccout() {
+    async function deleteAccount() {
       const firstCheck = confirm('本当に退会しますか？この操作は取り消せません。');
       if (firstCheck) {
         const secondCheck = confirm('最終確認です。データは全て消去されます。本当によろしいですか？');
         if (secondCheck) {
-          alert('アカウントを削除しました。ご利用ありがとうございました。');
-          window.location.href = 'login.html'; // ログイン画面へ強制遷移
+
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${API_BASE}/api/user`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (res.ok) {
+            localStorage.removeItem('token'); // トークン削除
+            alert('アカウントを削除しました。ご利用ありがとうございました。');
+            window.location.href = 'index.html';
+          } else {
+            alert('削除に失敗しました。もう一度お試しください。');
+          }
         }
       }
     }

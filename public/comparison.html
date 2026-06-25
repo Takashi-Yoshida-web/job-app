@@ -11,6 +11,7 @@
     <a href="dashboard.html" class="menu-item">ダッシュボード</a>
     <a href="applications.html" class="menu-item">応募管理</a>
     <a href="comparison.html" class="menu-item active">企業評価・比較</a>
+    <a href="profile.html" class="menu-item">プロフィール</a>
     <a href="settings.html" class="menu-item">設定</a>
   </div>
 
@@ -91,178 +92,202 @@
 
   <script>
     const API_BASE = 'https://job-app--job-app-874ad.asia-east1.hosted.app';
-
-    // localStorageから評価データを取得
-    function getSavedRatings() {
-      return JSON.parse(localStorage.getItem('compRatings')) || [];
-    }
-
-    // 数値を星マークに変換
     function convertToStars(score) {
-      const num = parseInt(score);
-      return '★'.repeat(num) + '☆'.repeat(5 - num);
+        const num = parseInt(score);
+        return '★'.repeat(num) + '☆'.repeat(5 - num);
     }
 
     // APIから応募一覧を取得
     async function fetchApplications() {
-      const token = localStorage.getItem('token');
-      try {
-        const res = await fetch(`${API_BASE}/api/applications/ranking?sortBy=salary`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('取得失敗');
-        const data = await res.json();
-        return data.applications || [];
-      } catch (e) {
-        console.error('応募データの取得に失敗しました:', e);
-        return [];
-      }
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_BASE}/api/applications`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('取得失敗');
+            const data = await res.json();
+            return data.applications || [];
+        } catch (e) {
+            console.error('応募データの取得に失敗しました:', e);
+            return [];
+        }
     }
 
-    // 企業選択プルダウンを生成
-    function renderCompanySelect(applications) {
-      const companySelect = document.getElementById('comp-company-select');
-      companySelect.innerHTML = '<option value="">-- 応募管理から企業を選択 --</option>';
-      applications.forEach(app => {
+// 企業選択プルダウンを生成
+function renderCompanySelect(applications) {
+    const companySelect = document.getElementById('comp-company-select');
+    companySelect.innerHTML = '<option value="">-- 応募管理から企業を選択 --</option>';
+    applications.forEach(app => {
         const option = document.createElement('option');
         option.value = app.id;
-        // ★ バックエンドのカラム名に合わせて companyName / jobTitle を使用
         option.textContent = `${app.companyName} [${app.jobTitle}]`;
         companySelect.appendChild(option);
-      });
-    }
+    });
+}
 
-    // 評価ランキング一覧を描画
-    function renderRankingList(applications) {
-      const listContainer = document.getElementById('comparison-list-container');
-      const compRatings = getSavedRatings();
+// 評価ランキング一覧を描画（DBのデータを使用）
+function renderRankingList(applications) {
+    const listContainer = document.getElementById('comparison-list-container');
 
-      // 応募管理に存在するIDの評価だけに絞る（削除済み企業を自動除外）
-      const validRatings = compRatings.filter(rate =>
-        applications.some(app => app.id == rate.jobId)
-      );
+    // 4項目のうち1つでも評価が入っているものだけ表示
+    const ratedApps = applications.filter(app =>
+        app.ratingSalary > 0 || app.ratingHoliday > 0 ||
+        app.ratingLocation > 0 || app.ratingWork > 0
+    );
 
-      if (validRatings.length === 0) {
+    if (ratedApps.length === 0) {
         listContainer.innerHTML = `
-          <div class="card" style="text-align: center; color: #8b949e; padding: 40px 20px;">
-            <p>評価された企業はまだありません。</p>
-            <p style="font-size: 14px; color: #6e7681; margin-top: 5px;">上のフォームから企業を選んで評価を入力してください。</p>
-          </div>
-        `;
-        return;
-      }
-
-      // 平均スコアで降順ソート
-      validRatings.forEach(rate => {
-        rate.avg = (parseInt(rate.salary) + parseInt(rate.location) + parseInt(rate.work) + parseInt(rate.culture)) / 4;
-      });
-      validRatings.sort((a, b) => b.avg - a.avg);
-
-      listContainer.innerHTML = '';
-      validRatings.forEach((rate, index) => {
-        // ★ バックエンドのカラム名に合わせて companyName / jobTitle を参照
-        const originalApp = applications.find(app => app.id == rate.jobId);
-        const jobTitleText = originalApp ? originalApp.jobTitle : '未設定';
-
-        listContainer.innerHTML += `
-          <div class="card" style="margin-bottom: 20px; position: relative; border-left: 5px solid #7c3aed;">
-            <span style="position: absolute; top: 15px; left: 15px; background: #21262d; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; color: #7c3aed;">
-              RANK ${index + 1}
-            </span>
-
-            <div style="padding-left: 60px;">
-              <h3 style="font-size: 18px; margin-bottom: 5px;">${rate.companyName}</h3>
-              <p style="font-size: 13px; color: #8b949e; margin-bottom: 15px;">
-                💼 職種: ${jobTitleText}
-              </p>
-
-              <div class="form-row" style="font-size: 14px; color: #c9d1d9; margin-bottom: 15px; gap: 10px 20px;">
-                <div><span style="color: #8b949e; margin-right: 8px;">給与・福利:</span> <span style="color: #ffb100;">${convertToStars(rate.salary)}</span></div>
-                <div><span style="color: #8b949e; margin-right: 8px;">勤務地・通勤:</span> <span style="color: #ffb100;">${convertToStars(rate.location)}</span></div>
-                <div><span style="color: #8b949e; margin-right: 8px;">仕事内容・興味:</span> <span style="color: #ffb100;">${convertToStars(rate.work)}</span></div>
-                <div><span style="color: #8b949e; margin-right: 8px;">環境・休日面:</span> <span style="color: #ffb100;">${convertToStars(rate.culture)}</span></div>
-              </div>
-
-              <div style="background: #0d1117; padding: 10px 15px; border-radius: 8px; font-size: 14px; color: #c9d1d9;">
-                <strong>メモ:</strong> ${rate.memo || '（なし）'}
-              </div>
+            <div class="card" style="text-align: center; color: #8b949e; padding: 40px 20px;">
+                <p>評価された企業はまだありません。</p>
+                <p style="font-size: 14px; color: #6e7681; margin-top: 5px;">上のフォームから企業を選んで評価を入力してください。</p>
             </div>
-
-            <button onclick="deleteRating(${rate.jobId})" style="position: absolute; top: 15px; right: 15px; background: transparent; color: #f85149; border: none; cursor: pointer; font-size: 13px;">削除</button>
-          </div>
         `;
-      });
-    }
-
-    // ページ全体の初期化・再描画
-    async function renderComparisonPage() {
-      const applications = await fetchApplications();
-      renderCompanySelect(applications);
-      renderRankingList(applications);
-    }
-
-    // 評価の保存・更新
-    document.getElementById('save-btn').addEventListener('click', async function () {
-      const jobId = document.getElementById('comp-company-select').value;
-      if (!jobId) {
-        alert('企業を選択してください。');
         return;
-      }
+    }
 
-      const applications = await fetchApplications();
-      // ★ バックエンドのカラム名 companyName を使用
-      const targetApp = applications.find(app => app.id == jobId);
-      if (!targetApp) return;
-
-      const newRating = {
-        jobId: jobId,
-        companyName: targetApp.companyName,
-        salary: document.getElementById('score-salary').value,
-        location: document.getElementById('score-location').value,
-        work: document.getElementById('score-work').value,
-        culture: document.getElementById('score-culture').value,
-        memo: document.getElementById('comp-memo').value
-      };
-
-      let compRatings = getSavedRatings();
-      const existingIndex = compRatings.findIndex(rate => rate.jobId == jobId);
-      if (existingIndex > -1) {
-        compRatings[existingIndex] = newRating;
-      } else {
-        compRatings.push(newRating);
-      }
-
-      localStorage.setItem('compRatings', JSON.stringify(compRatings));
-
-      // フォームをリセット（selectはデフォルト値に戻す）
-      document.getElementById('comp-company-select').value = '';
-      document.getElementById('score-salary').value = '3';
-      document.getElementById('score-location').value = '3';
-      document.getElementById('score-work').value = '3';
-      document.getElementById('score-culture').value = '3';
-      document.getElementById('comp-memo').value = '';
-
-      await renderComparisonPage();
-      alert('企業評価を保存しました！');
+    // 4項目の平均スコアで降順ソート
+    ratedApps.sort((a, b) => {
+        const avgA = (a.ratingSalary + a.ratingHoliday + a.ratingLocation + a.ratingWork) / 4;
+        const avgB = (b.ratingSalary + b.ratingHoliday + b.ratingLocation + b.ratingWork) / 4;
+        return avgB - avgA;
     });
 
-    // 評価データの個別削除
-    async function deleteRating(jobId) {
-      if (confirm('この企業の評価データを削除しますか？（応募管理の求人自体は消えません）')) {
-        let compRatings = getSavedRatings();
-        compRatings = compRatings.filter(rate => rate.jobId != jobId);
-        localStorage.setItem('compRatings', JSON.stringify(compRatings));
-        await renderComparisonPage();
-      }
+    // 💡 フロント独自保存のメモデータをlocalStorageから読み込む
+    const localMemos = JSON.parse(localStorage.getItem('localMemos') || '{}');
+
+    listContainer.innerHTML = '';
+    ratedApps.forEach((app, index) => {
+        // 💡 サーバー上のapp.memoが空でも、フロント独自の保存場所にあればそちらを使う
+        const savedMemo = localMemos[app.id] || app.memo || '';
+
+        listContainer.innerHTML += `
+            <div class="card" style="margin-bottom: 20px; position: relative; border-left: 5px solid #7c3aed;">
+                <span style="position: absolute; top: 15px; left: 15px; background: #21262d; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; color: #7c3aed;">
+                    RANK ${index + 1}
+                </span>
+                <div style="padding-left: 60px;">
+                    <h3 style="font-size: 18px; margin-bottom: 5px;">${app.companyName}</h3>
+                    <p style="font-size: 13px; color: #8b949e; margin-bottom: 15px;">
+                        💼 職種: ${app.jobTitle}
+                    </p>
+                    <div class="form-row" style="font-size: 14px; color: #c9d1d9; margin-bottom: 15px; gap: 10px 20px;">
+                        <div><span style="color: #8b949e; margin-right: 8px;">給与・福利:</span> <span style="color: #ffb100;">${convertToStars(app.ratingSalary)}</span></div>
+                        <div><span style="color: #8b949e; margin-right: 8px;">勤務地・通勤:</span> <span style="color: #ffb100;">${convertToStars(app.ratingLocation)}</span></div>
+                        <div><span style="color: #8b949e; margin-right: 8px;">仕事内容・興味:</span> <span style="color: #ffb100;">${convertToStars(app.ratingWork)}</span></div>
+                        <div><span style="color: #8b949e; margin-right: 8px;">環境・休日面:</span> <span style="color: #ffb100;">${convertToStars(app.ratingHoliday)}</span></div>
+                    </div>
+                    <div class="comp-card-memo" style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed #30363d; font-size: 14px; color: #c9d1d9;">
+                        <strong style="color: #7c3aed; font-size: 13px; display: block; margin-bottom: 4px;">📝 特記事項・選考メモ:</strong>
+                        <div>${savedMemo ? savedMemo.replace(/\n/g, '<br>') : '<span style="color:#8b949e;">なし</span>'}</div>
+                    </div>
+                </div>
+                <button onclick="resetRating(${app.id})" style="position: absolute; top: 15px; right: 15px; background: transparent; color: #f85149; border: none; cursor: pointer; font-size: 13px;">評価をリセット</button>
+            </div>
+        `;
+    });
+}
+
+// ページ全体の初期化・再描画
+async function renderComparisonPage() {
+    const applications = await fetchApplications();
+    renderCompanySelect(applications);
+    renderRankingList(applications);
+}
+
+// 評価の保存・更新（PUTリクエストでDBへ）
+document.getElementById('save-btn').addEventListener('click', async function () {
+    const jobId = document.getElementById('comp-company-select').value;
+    if (!jobId) {
+        alert('企業を選択してください。');
+        return;
     }
 
-    // 初期化
-    window.onload = async function () {
-      if (localStorage.getItem('theme') === 'light') {
+    const memoValue = document.getElementById('comp-memo').value;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_BASE}/api/applications/${jobId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                ratingSalary: parseInt(document.getElementById('score-salary').value),
+                ratingHoliday: parseInt(document.getElementById('score-culture').value),
+                ratingLocation: parseInt(document.getElementById('score-location').value),
+                ratingWork: parseInt(document.getElementById('score-work').value),
+                memo: memoValue // 👈 バックエンド用コードはそのまま崩さず残します
+            })
+        });
+
+        if (!res.ok) throw new Error('保存失敗');
+
+        // 💡 【フロント側での対策】サーバーが無視しても良いように、localStorageにメモを直接保存
+        const localMemos = JSON.parse(localStorage.getItem('localMemos') || '{}');
+        localMemos[jobId] = memoValue;
+        localStorage.setItem('localMemos', JSON.stringify(localMemos));
+
+        // フォームをリセット
+        document.getElementById('comp-company-select').value = '';
+        document.getElementById('score-salary').value = '3';
+        document.getElementById('score-location').value = '3';
+        document.getElementById('score-work').value = '3';
+        document.getElementById('score-culture').value = '3';
+        document.getElementById('comp-memo').value = ''; // 保存成功後にメモの入力欄を確実に空っぽにクリア
+
+        await renderComparisonPage();
+        alert('企業評価を保存しました！');
+
+    } catch (e) {
+        console.error('評価の保存に失敗しました:', e);
+        alert('保存に失敗しました。もう一度お試しください。');
+    }
+});
+
+// 評価のリセット（4項目を0に戻す）
+async function resetRating(jobId) {
+    if (!confirm('この企業の評価をリセットしますか？')) return;
+
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`${API_BASE}/api/applications/${jobId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                ratingSalary: 0,
+                ratingHoliday: 0,
+                ratingLocation: 0,
+                ratingWork: 0,
+                memo: ''
+            })
+        });
+
+        if (!res.ok) throw new Error('リセット失敗');
+
+        // 💡 【フロント側での対策】リセット時はフロント側のメモも一緒に削除する
+        const localMemos = JSON.parse(localStorage.getItem('localMemos') || '{}');
+        delete localMemos[jobId];
+        localStorage.setItem('localMemos', JSON.stringify(localMemos));
+
+        await renderComparisonPage();
+
+    } catch (e) {
+        console.error('評価のリセットに失敗しました:', e);
+        alert('リセットに失敗しました。もう一度お試しください。');
+    }
+}
+
+// 初期化
+window.onload = async function () {
+    if (localStorage.getItem('theme') === 'light') {
         document.body.classList.add('light-theme');
-      }
-      await renderComparisonPage();
-    };
-  </script>
+    }
+    await renderComparisonPage();
+};
+</script>
 </body>
 </html>
