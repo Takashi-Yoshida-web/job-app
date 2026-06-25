@@ -7,7 +7,9 @@
 </head>
 <body>
   <div class="sidebar">
-    <div class="logo">JobTracker</div>
+    <div class="logo">
+      <a href="dashboard.html">JobTracker</a>
+    </div>
     <a href="dashboard.html" class="menu-item active">ダッシュボード</a>
     <a href="applications.html" class="menu-item">応募管理</a>
     <a href="comparison.html" class="menu-item">企業評価・比較</a>
@@ -121,72 +123,58 @@
   </div>
 
   <script>
-    const API_BASE = 'https://job-app--job-app-874ad.asia-east1.hosted.app';
     // 💾 localStorageからデータを取得する関数
     function getSavedData(key) {
       return JSON.parse(localStorage.getItem(key)) || [];
     }
 
-     // ✅ Gmail自動同期（30分以上経過した場合のみ実行）
-      async function autoSyncGmailIfNeeded(token) {
-        const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30分をミリ秒に変換
-        const syncStatus = document.getElementById('sync-status');
-  
-        // DBから現在のユーザー情報（最終同期時刻）を取得
-        let lastSyncedDate = null;
-        try {
-          const profileRes = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const profileData = await profileRes.json();
-  
-          // Gmail未連携の場合はそもそも同期を試みない
-          if (!profileData.user.gmailRefreshToken) {
-            syncStatus.textContent = '📭 Gmail未連携（settings から連携できます）';
-            return;
-          }
-  
-          if (profileData.user.lastGmailSync) {
-            lastSyncedDate = new Date(profileData.user.lastGmailSync);
-          }
-        } catch (err) {
-          console.error('プロフィール取得エラー:', err);
-        }
-  
-        const now = Date.now();
-  
-        // 前回の同期から30分経っていなければスキップ
-        if (lastSyncedDate && (now - lastSyncedDate.getTime()) < SYNC_INTERVAL_MS) {
-          const minutesAgo = Math.floor((now - lastSyncedDate.getTime()) / 60000);
-          syncStatus.textContent = `📬 最終Gmail同期: ${minutesAgo}分前`;
-          return;
-        }
-  
-        // 30分以上経過、または同期履歴なし → 同期を実行
-        syncStatus.textContent = '📬 Gmailを同期中...';
-  
-        try {
-          const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/sync-gmail', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await res.json();
-  
-          if (res.ok) {
-            if (data.importedCount > 0) {
-              syncStatus.innerHTML = `✅ Gmail同期完了（${data.importedCount}件取り込み）`;
-            } else {
-              syncStatus.textContent = '✅ Gmail同期完了（新着なし）';
-            }
-          } else {
-            syncStatus.textContent = '📭 Gmail未連携（settings から連携できます）';
-          }
-  
-        } catch (err) {
-          console.error('Gmail同期エラー:', err);
-          syncStatus.textContent = '⚠️ Gmail同期に失敗しました';
-        }
+    // ✅ Gmail自動同期（30分以上経過した場合のみ実行）
+    async function autoSyncGmailIfNeeded(token) {
+      const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30分をミリ秒に変換
+      const lastSynced = localStorage.getItem('lastGmailSync');
+      const now = Date.now();
+      const syncStatus = document.getElementById('sync-status');
+
+      // 前回の同期から30分経っていなければスキップ
+      if (lastSynced && (now - parseInt(lastSynced)) < SYNC_INTERVAL_MS) {
+        const minutesAgo = Math.floor((now - parseInt(lastSynced)) / 60000);
+        syncStatus.textContent = `📬 最終Gmail同期: ${minutesAgo}分前`;
+        return;
       }
+
+      // 30分以上経過 → 同期を実行
+      syncStatus.textContent = '📬 Gmailを同期中...';
+
+      try {
+        const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications/sync-gmail', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          // 同期成功 → 最終同期時刻を保存
+          localStorage.setItem('lastGmailSync', String(now));
+
+          if (data.importedCount > 0) {
+            // 新着メールがあった場合
+            syncStatus.innerHTML = `✅ Gmail同期完了（${data.importedCount}件取り込み）`;
+          } else {
+            // 新着なし
+            syncStatus.textContent = '✅ Gmail同期完了（新着なし）';
+          }
+        } else {
+          // Gmail未連携など（エラーでも画面表示は続行）
+          syncStatus.textContent = '📭 Gmail未連携（settings から連携できます）';
+        }
+
+      } catch (err) {
+        // ネットワークエラーなどでも画面表示は続行
+        console.error('Gmail同期エラー:', err);
+        syncStatus.textContent = '⚠️ Gmail同期に失敗しました';
+      }
+    }
+
     // 期限アラートを表示する関数
     async function loadAlerts(token) {
       const container = document.getElementById('alerts-container');
