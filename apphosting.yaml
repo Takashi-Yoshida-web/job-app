@@ -1,3 +1,7 @@
+scripts:
+  buildCommand: next build --no-lint
+  runCommand: node dist/index.js
+  
 runConfig:
   runtime: nodejs20
 
