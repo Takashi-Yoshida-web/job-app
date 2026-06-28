@@ -1011,17 +1011,17 @@ app.post('/api/notifications/daily-check', async (req,res) => {
 
 
 
-            // デバッグ用（確認後に削除）
-            console.log('[デバッグ] 今日の範囲:', todayStart, '〜', todayEnd);
-            console.log('[デバッグ] 今日の文字列:', todayStr);
-            const allApps = await Application.findAll({ where: { userId: { [Op.not]: null } } });
-            console.log('[デバッグ] 全応募データ:', JSON.stringify(allApps.map(a => ({
-                id: a.id,
-                companyName: a.companyName,
-                interviewDate: a.interviewDate,
-                deadlineDate: a.deadlineDate,
-                status: a.status
-            }))));
+            // // デバッグ用（確認後に削除）
+            // console.log('[デバッグ] 今日の範囲:', todayStart, '〜', todayEnd);
+            // console.log('[デバッグ] 今日の文字列:', todayStr);
+            // const allApps = await Application.findAll({ where: { userId: { [Op.not]: null } } });
+            // console.log('[デバッグ] 全応募データ:', JSON.stringify(allApps.map(a => ({
+            //     id: a.id,
+            //     companyName: a.companyName,
+            //     interviewDate: a.interviewDate,
+            //     deadlineDate: a.deadlineDate,
+            //     status: a.status
+            // }))));
 
             const urgentApps = await Application.findAll({
                 where:{
