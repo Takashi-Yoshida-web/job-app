@@ -507,6 +507,7 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
         
         const messages = listResponse.data.messages || [];
         if (messages.length === 0) {
+            await user.update({ lastGmailSync: new Date() });
             return res.json({ message: "新しい就活関連の未読メールは見つかりませんでした。", importedCount: 0 });
         }
         
