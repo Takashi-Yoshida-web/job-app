@@ -996,9 +996,9 @@ app.post('/api/notifications/daily-check', async (req,res) => {
     
         const secret = req.headers['x-cron-secret'];
         //デバック用ログ
-        console.log('[デバック]受信したsecret:',secret);
-        console.log('[デバック]環境変数のCRON_SECRET:',process.env.CRON_SECRET);
-        console.log('[デバック]一致しているか:', secret === process.env.CRON_SECRET);
+        // console.log('[デバック]受信したsecret:',secret);
+        // console.log('[デバック]環境変数のCRON_SECRET:',process.env.CRON_SECRET);
+        // console.log('[デバック]一致しているか:', secret === process.env.CRON_SECRET);
         if (secret !== process.env.CRON_SECRET) {
             return res.status(401).json({message:'不正なアクセスです。'});
         }
