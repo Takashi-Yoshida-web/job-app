@@ -500,14 +500,14 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
         // 未読（is:unread）で、選考・面接・内定・見送りなどの単語が含まれるメールを取得
         const searchQuery = 'is:unread ("選考" OR "面接" OR "内定" OR "見送り" OR "就職活動")';        //検索条件
         
-        const listResponse = await gmail.users.messages.list({
+        const listResponse = await gmail.users.messages.list({            //検索条件
             userId: 'me',            //承認している本人のGmailアカウント
             q: searchQuery,            //検索条件
             maxResults: 5 // 一度に処理する件数を安全のため最大5件に制限
         });
         
-        const messages = listResponse.data.messages || [];
-        if (messages.length === 0) {
+        const messages = listResponse.data.messages || [];        //Gmail連携を承認しているアカウントに来た未読メッセージの数を検索
+        if (messages.length === 0) {                              //0件の場合
             await user.update({ lastGmailSync: new Date() });
             return res.json({ message: "新しい就活関連の未読メールは見つかりませんでした。", importedCount: 0 });
         }
@@ -525,28 +525,28 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
             });
             
             // メールの本文（Body）をパース（デコード）する処理
-            let emailBody = "";
-            const payload = msgDetails.data.payload;
+            let emailBody = "";                //メール本文を格納する変数
+            const payload = msgDetails.data.payload;        //メールの構造データを取得
             
             if (payload.parts) {
                 // 複数パーツに分かれている場合（テキスト、HTMLなど）
                 const textPart = payload.parts.find(part => part.mimeType === 'text/plain');
                 if (textPart && textPart.body.data) {
-                    emailBody = Buffer.from(textPart.body.data, 'base64').toString('utf8');
+                    emailBody = Buffer.from(textPart.body.data, 'base64').toString('utf8');        //base64形式でエンコードされたメール本文を普通の文字列(UTF-8)に変換
                 }
             } else if (payload.body && payload.body.data) {
                 // 単一パーツの場合
-                emailBody = Buffer.from(payload.body.data, 'base64').toString('utf8');
+                emailBody = Buffer.from(payload.body.data, 'base64').toString('utf8');        //base64形式でエンコードされたメール本文を普通の文字列(UTF-8)に変換
             }
             
-            if (!emailBody || emailBody.trim() === "") continue;
+            if (!emailBody || emailBody.trim() === "") continue;                //本文が取得できなかった、または空白の場合はこのメールをスキップ(continue)、trim()はスペースや改行だけの意味のないスペースを除外
             
             // OpenAIの解析処理
             const aiResponse = await openai.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
                     {
-                        role: "system",
+                        role: "system",                    //プロンプト
                         content: `あなたは優秀な就職活動アシスタントです。提供されたメール本文を読み解き、指定されたJSON構造に必要な情報を正確に抽出してください。
                         【ステータス（status）の判定ルール】
                         - "書類選考中" : 応募受付メールなど
@@ -580,20 +580,20 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
                 }
             });
 
-            let aiResult;
+            let aiResult;            //AIの解析結果を格納する変数
             try {
-                aiResult = JSON.parse(aiResponse.choices[0].message.content);
-                const parseDate = (dateStr) => {
+                aiResult = JSON.parse(aiResponse.choices[0].message.content);        //jsonで帰ってきたAIのレスポンスをJavaScriptのオブジェクトに変換
+                const parseDate = (dateStr) => {                                     //日付の表記ずれを防ぐために整形（パース）
                     if (!dateStr) return null;
                     const parsed = new Date(dateStr);
                     if (!isNaN(parsed.getTime())) return parsed;
-                    // 「2026年5月28日」のような日本語形式をパース
+                    // 「yyyy年MM月dd日」のような日本語形式をパース
                     const match = dateStr.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
-                    if (match) return new Date(`${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`);
+                    if (match) return new Date(`${match[1]}-${match[2].padStart(2,'0')}-${match[3].padStart(2,'0')}`);        // padStart(2,'0') は "5" → "05" のようにゼロ埋めする処理
                     return null;
                 };
 
-                 aiResult.interviewDate = parseDate(aiResult.interviewDate);
+                 aiResult.interviewDate = parseDate(aiResult.interviewDate);            //AIが返した面接日の文字列を上の関数でDateオブジェクトに変換して上書き
                  
             } catch (parseError) {
                 console.error("[AIレスポンスのパースに失敗]:", aiResponse.choices[0].message.content);
@@ -603,11 +603,11 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
             
             // DBへ保存、または更新（アップデート）
             let application = await Application.findOne({
-                where: { userId: userId, companyName: aiResult.companyName }
+                where: { userId: userId, companyName: aiResult.companyName }            // データベースから「同じユーザー＆同じ会社名」の応募データを検索する
             });
             
             if (application) {
-                await application.update({
+                await application.update({                                            //レコードがすでにある場合、更新する
                     jobTitle: aiResult.jobTitle || application.jobTitle,
                     status: aiResult.status,
                     interviewDate: aiResult.interviewDate || application.interviewDate,
@@ -615,9 +615,9 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
                     companyUrl: aiResult.companyUrl || application.companyUrl,
                     deadlineDate: aiResult.deadlineDate || application.deadlineDate
                 });
-                summaryMessages.push(`「${aiResult.companyName}」を更新（${aiResult.status}）`);
+                summaryMessages.push(`「${aiResult.companyName}」を更新（${aiResult.status}）`);        //更新した旨をメッセージで通知
             } else {
-                await Application.create({
+                await Application.create({                                                //レコードがなかった場合新規作成する
                     userId: userId,
                     companyName: aiResult.companyName,
                     jobTitle: aiResult.jobTitle || "職種不明",
@@ -628,11 +628,10 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
                     companyUrl: aiResult.companyUrl,
                     deadlineDate: aiResult.deadlineDate
                 });
-                summaryMessages.push(`「${aiResult.companyName}」を新規登録（${aiResult.status}）`);
+                summaryMessages.push(`「${aiResult.companyName}」を新規登録（${aiResult.status}）`);        //新規作成完了の旨をメッセージで通知
             }
             
             // 処理が成功したメールを「既読（UNREADラベルを削除）」にして、次回二重に取り込まないようにする
-            // Gmail同期ロジック内の修正ポイント例
             await gmail.users.messages.batchModify({
                 userId: 'me',
                 requestBody: { 
@@ -660,9 +659,8 @@ app.post('/api/applications/sync-gmail', authenticateToken, async (req, res) => 
 });
 
 
-
-
-app.get('/api/applications/analytics/source', authenticateToken, async(req,res) => {
+// GETリクエスト：応募データの集計情報を返すエンドポイント
+app.get('/api/applications/analytics/source', authenticateToken, async(req,res) => {        // authenticateToken：JWTトークンを検証するミドルウェア（ログイン済みか確認）
     try{
         const userId = req.user.userId
 
@@ -672,10 +670,10 @@ app.get('/api/applications/analytics/source', authenticateToken, async(req,res) 
         });
 
         //媒体ごとの件数を集計する
-        const sourceCounts ={};
+        const sourceCounts ={};        //集計結果を入れるオブジェクト(キー:名前、値:件数)
         const statusCounts ={};
 
-        myApplications.forEach(app => {
+        myApplications.forEach(app => {                //応募データをforEachで一件ずつ処理して集計
             //媒体の集計
             const sourceName = app.source || "その他";
             sourceCounts[sourceName] = (sourceCounts[sourceName] || 0) + 1;
@@ -690,7 +688,7 @@ app.get('/api/applications/analytics/source', authenticateToken, async(req,res) 
             totalCount: myApplications.length,
             analytics: {
                 bySource: sourceCounts,
-                byStatus: statusCounts,   //内定率
+                byStatus: statusCounts,   
             }
         });
     } catch (err){
@@ -702,8 +700,8 @@ app.get('/api/applications/analytics/source', authenticateToken, async(req,res) 
 
 
 
-
-app.get('/api/applications',authenticateToken, async(req, res) => {
+//自分の応募一覧を取得するエンドポイント
+app.get('/api/applications',authenticateToken, async(req, res) => {            //authenticateTokenでログイン済みか確認
     try {
         const userId = req.user.userId;
         
@@ -780,16 +778,17 @@ app.post('/api/applications',authenticateToken, async(req,res) =>{
 
 
 
-//手動編集機能
+//特定の応募データを更新するエンドポイント
 app.put('/api/applications/:id',authenticateToken, async(req,res) =>{
    try{
-    const userId = req.user.userId;  //ユーザーIDの取得
-    const applicationId = Number(req.params.id); //URLの:idの部分
+    const userId = req.user.userId;                          //ユーザーIDの取得
+    const applicationId = Number(req.params.id);          // URLの ":id" 部分を数値に変換
+       // リクエストボディから更新したい項目を取り出す
     const {companyName, jobTitle, status, source, interviewDate, belongings, companyUrl, ratingSalary, 
         ratingHoliday, ratingLocation, ratingWork, deadlineDate } = req.body;
 
-    const application = await Application.findOne({
-        where: { id: applicationId, userId: userId}
+    const application = await Application.findOne({            //指定されたIdかつ自分のデータを検索
+        where: { id: applicationId, userId: userId}            //userIdを含むことで他人のデータを編集できないようにする
     });
 
     if (!application) {
@@ -823,7 +822,6 @@ app.put('/api/applications/:id',authenticateToken, async(req,res) =>{
 
 
 // 企業評価・比較API（給与・休日満足度でのソート一覧取得）
-// フロント側から `/api/applications/ranking?sortBy=salary` のようにリクエストを受け取る
 app.get('/api/applications/ranking', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
@@ -893,26 +891,27 @@ app.get('/api/applications/alerts', authenticateToken, async (req, res) => {
 //プロフィールのデータを更新
 app.put('/api/user/update',authenticateToken, async(req,res) => {
     try {
-        const userId =req.user.userId;
-        const { username, email, newPassword } =req.body;
+        const userId =req.user.userId;                    // トークンから取得したログイン中のユーザーID
+        const { username, email, newPassword } =req.body;        //リクエストボディから変更したい項目を取り出す
 
-        const user = await User.findByPk(userId);
+        const user = await User.findByPk(userId);            //Pkでユーザー検索
         if (!user) {
             return res.status(404).json({message:"ユーザーが見つかりませんでした。"});
         }
-//メールアドレスを変更する場合は重複チェック
+        //メールアドレスを変更する場合は重複チェック
         if (email && email !== user.email) {
             const exists = await User.findOne({ where: { email } });
             if (exists) {
                 return res.status(400).json({message: "そのメールアドレスは既に使用されています。"});
             }
         }
-
-        const updateData = {
+        
+        //更新するデータをオブジェクトにまとめる、undefined でなければ新しい値、undefined なら既存の値を保持
+        const updateData = {            
             username: username !== undefined ? username : user.username,
             email: email !== undefined ? email : user.email
         };
-//新しいパスワードが入力されている場合はハッシュ化して更新
+        //新しいパスワードが入力されている場合はハッシュ化して更新
         if (newPassword && newPassword.trim() !== "") {
             updateData.password = await bcrypt.hash(newPassword, 10);
         }
@@ -994,15 +993,18 @@ app.delete('/api/user', authenticateToken, async (req, res) => {
 //メールを用いたリマインド機能
 app.post('/api/notifications/daily-check', async (req,res) => {
     
-        const secret = req.headers['x-cron-secret'];
+        const secret = req.headers['x-cron-secret'];        //リクエストヘッダーから秘密鍵を取り出す
         //デバック用ログ
         // console.log('[デバック]受信したsecret:',secret);
         // console.log('[デバック]環境変数のCRON_SECRET:',process.env.CRON_SECRET);
         // console.log('[デバック]一致しているか:', secret === process.env.CRON_SECRET);
-        if (secret !== process.env.CRON_SECRET) {
+
+    
+        if (secret !== process.env.CRON_SECRET) {                            //環境変数に保存した正しいキーと一致しない場合は不正アクセスとして拒否
             return res.status(401).json({message:'不正なアクセスです。'});
         }
-        try {
+        // interviewDate（日時型）の検索に使う
+        try {                                                                  //今日の日付を定義00:00:00→23:59:59:999
             const todayStart = new Date();
             todayStart.setHours(0,0,0,0);
             const todayEnd = new Date();
@@ -1023,26 +1025,29 @@ app.post('/api/notifications/daily-check', async (req,res) => {
             //     status: a.status
             // }))));
 
+
+            //通知対象の応募データを検索する
+             //条件「不採用','内定以外」かつ「今日が面接日 または 今日が提出締め切り日」
             const urgentApps = await Application.findAll({
                 where:{
                     [Op.and]: [
-                        {status: { [Op.notIn]: ['不採用','内定'] } },
+                        {status: { [Op.notIn]: ['不採用','内定'] } },         // 選考が終わったものは除外する      
                         {
                             [Op.or] : [
-                                {interviewDate: { [Op.between]: [todayStart, todayEnd] } },
-                                {deadlineDate: todayStr }
+                                {interviewDate: { [Op.between]: [todayStart, todayEnd] } },        // 面接日が今日の範囲内（日時型なのでbetweenで範囲検索）
+                                {deadlineDate: todayStr }                                           //締切日が今日
                                 ]
                         }
                         ]
                 }
             });
 
-            if (urgentApps.length === 0) {
+            if (urgentApps.length === 0) {                                                //通知対象がなければここで終了
                 console.log('[日時通知]本日の通知対象はありませんでした');
                 return res.json({message:'本日の通知対象はありません',sentCount:0 });
             }
 
-            //ユーザーIDごとにグループ化
+            //ユーザーIDごとにグループ化(同じユーザーに複数の通知がある場合、1通のメールにまとめて送るため)
             const appsByUser = {};
             urgentApps.forEach(app => {
                 if(!appsByUser[app.userId]) appsByUser[app.userId] = [];
@@ -1050,12 +1055,12 @@ app.post('/api/notifications/daily-check', async (req,res) => {
             });
 
             let sentCount = 0;
-
+            //ユーザーごとにメールを送信する
             for (const[userId, apps] of Object.entries(appsByUser)) {
-                const user = await User.findByPk(userId, {
+                const user = await User.findByPk(userId, {             // メール送信に必要なメールアドレスとユーザー名だけを取得
                     attributes: ['email','username']
                 });
-                if (!user) continue;
+                if (!user) continue;                                // ユーザーが削除済みなどの場合はスキップ
 
                 //件名を内容に応じて動的に生成
                 const interviewCount = apps.filter(a => a.interviewDate).length;
@@ -1085,8 +1090,10 @@ app.post('/api/notifications/daily-check', async (req,res) => {
                         lines.push (`企業URL: ${app.companyUrl}`);
                     }
                     return lines.join('\n');
-                }).join('\n\n');
+                }).join('\n\n');                                    // 応募1件につき複数行を作り、"\n\n"で区切って並べる
 
+
+                // Nodemailerでメールを送信する
                 await transporter.sendMail({
                     from: `"JobTracker" <${process.env.GMAIL_NOTIFY_USER}>`,
                     to: user.email,
