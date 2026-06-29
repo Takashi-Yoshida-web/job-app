@@ -931,6 +931,58 @@ app.put('/api/user/update',authenticateToken, async(req,res) => {
 
 
 
+// 通知設定を保存する
+app.put('/api/notifications/settings', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { notifyInterview, notifyDocument } = req.body;
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ message: "ユーザーが見つかりませんでした。" });
+        }
+
+        await user.update({
+            notifyInterview: notifyInterview !== undefined ? notifyInterview : user.notifyInterview,
+            notifyDocument:  notifyDocument  !== undefined ? notifyDocument  : user.notifyDocument
+        });
+
+        res.json({ message: "通知設定を保存しました。" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "サーバー側でエラーが発生しました。" });
+    }
+});
+
+
+
+
+// 通知設定を取得する
+app.get('/api/notifications/settings', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const user = await User.findByPk(userId, {
+            attributes: ['notifyInterview', 'notifyDocument']
+        });
+        if (!user) {
+            return res.status(404).json({ message: "ユーザーが見つかりませんでした。" });
+        }
+
+        res.json({
+            notifyInterview: user.notifyInterview,
+            notifyDocument:  user.notifyDocument
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "サーバー側でエラーが発生しました。" });
+    }
+});
+
+
+
 //指定した応募情報を削除
 app.delete('/api/applications/:id', authenticateToken, async (req, res) => {
     try {
