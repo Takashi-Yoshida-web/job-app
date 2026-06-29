@@ -61,60 +61,64 @@
       }
 
       allJobs.forEach(job => {
-        // ✅ DBのカラム名に合わせて修正
+        // 基本情報の取得
         const jobTitle    = job.jobTitle    || '職種未設定';
         const companyName = job.companyName || '企業名未設定';
         const status      = job.status      || '応募中';
         const source      = job.source      || 'その他';
-
-        // ✅ DBにないカラムは「未設定」で表示
-        const location    = '未設定'; // DBにカラムなし
-        const hours       = '未設定'; // DBにカラムなし
         const number      = source;   // 求人番号の代わりに応募媒体を表示
 
-        // 面接日・期限・持ち物など
-        const interviewDate = job.interviewDate
-          ? new Date(job.interviewDate).toLocaleDateString('ja-JP')
-          : null;
-        const deadlineDate  = job.deadlineDate  || null;
-        const belongings    = job.belongings    || null;
-        const companyUrl    = job.companyUrl    || null;
+        // 💡 就業場所の復元
+        const location = job.companyUrl && job.companyUrl.startsWith('就業場所: ') 
+          ? job.companyUrl.replace('就業場所: ', '') 
+          : '未設定';
 
-        // // ステータスバッジの色分け
-        // const statusColors = {
-        //   '書類選考中': '#3fb950',
-        //   '面接待ち':   '#f0883e',
-        //   '不採用':     '#f85149',
-        //   '内定':       '#58a6ff',
-        //   '応募中':     '#8b949e'
-        // };
-        // const statusColor = statusColors[status] || '#8b949e';
+        // 💡 賃金の復元
+        const salary = job.ratingSalary && job.ratingSalary > 0 
+          ? `${job.ratingSalary.toLocaleString()}円～` 
+          : '未設定';
 
+        // 💡 就業時間の復元
+        const hours = job.deadlineDate && job.deadlineDate.startsWith('時間: ') 
+          ? job.deadlineDate.replace('時間: ', '') 
+          : '未設定';
+
+        // 💡 休日の判定ロジックを正確に修正
+        let holiday = '未設定';
+        if (job.ratingHoliday === 5) {
+          holiday = '完全週休二日制（土日祝）';
+        } else if (job.ratingHoliday === 3) {
+          holiday = 'シフト制';
+        }
+
+        // 💡 特徴の復元（頭の「特徴: 」という文字をきれいに消して中身だけにする）
+        const features = job.belongings && job.belongings.startsWith('特徴: ') 
+          ? job.belongings.replace('特徴: ', '') 
+          : '';
+
+        const bonus = '未設定'; 
+
+        // 元々のHTMLレイアウト
         const cardHtml = `
           <div class="card job-card-row">
             <div class="block-main">
               <div class="meta-info">
                 <span class="badge-status">${status}</span>
-                
                 <span class="job-number">応募媒体：${number}</span>
               </div>
               <h3 class="job-title">${jobTitle}</h3>
               <p class="company-name">
-                ${companyUrl
-                  ? `<a href="${companyUrl}" target="_blank" class="company-link">${companyName}</a>`
-                  : `<span>${companyName}</span>`
-                }
+                <span>${companyName}</span>
               </p>
             </div>
             <hr class="card-divider">
             <div class="block-conditions">
-              ${interviewDate ? `<div class="cond-item"><span class="cond-label">面接日</span><span class="cond-value"><strong>${interviewDate}</strong></span></div>` : ''}
-              ${deadlineDate  ? `<div class="cond-item"><span class="cond-label">提出期限</span><span class="cond-value"><strong>${deadlineDate}</strong></span></div>` : ''}
-              ${belongings    ? `<div class="cond-item"><span class="cond-label">持ち物</span><span class="cond-value"><strong>${belongings}</strong></span></div>` : ''}
-              ${!interviewDate && !deadlineDate && !belongings
-                ? `<p style="color:#8b949e; font-size:13px;">詳細情報なし</p>`
-                : ''
-              }
+              <div class="cond-item"><span class="cond-label">就業場所</span><span class="cond-value">${location}</span></div>
+              <div class="cond-item"><span class="cond-label">賃金</span><span class="cond-value">${salary}</span></div>
+              <div class="cond-item"><span class="cond-label">就業時間</span><span class="cond-value">${hours}</span></div>
+              <div class="cond-item"><span class="cond-label">賞与</span><span class="cond-value">${bonus}</span></div>
+              <div class="cond-item"><span class="cond-label">休日</span><span class="cond-value">${holiday}</span></div>
+              ${features ? `<div class="cond-item"><span class="cond-label">特徴</span><span class="cond-value">${features}</span></div>` : ''}
             </div>
             <div class="block-actions applications-actions">
               <button class="btn-delete" onclick="deleteJob(${job.id})" title="この求人を削除する">削除</button>
