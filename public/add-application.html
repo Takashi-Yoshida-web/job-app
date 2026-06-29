@@ -92,6 +92,9 @@
     e.preventDefault();
     const token = localStorage.getItem('token');
 
+    // 選択された「特徴」チェックボックスを配列にして、文字列として結合
+    const checkedFeatures = Array.from(document.querySelectorAll('input[name="features"]:checked')).map(cb => cb.value).join(', ');
+
     const res = await fetch('https://job-app--job-app-874ad.asia-east1.hosted.app/api/applications', {
         method: 'POST',
         headers: {
@@ -101,7 +104,16 @@
         body: JSON.stringify({
             companyName: document.getElementById('company-name').value,
             jobTitle: document.getElementById('job-title').value,
-            source: '手動登録'
+            source: '手動登録',
+            status: document.getElementById('status').value,
+            
+            // 💡 バックエンド（app.js）のDB構造・カラム定義に対応させて送信します
+            // バックエンド側で用意されている評価数値、持ち物等の各カラムに、画面の入力文字列をマッピング
+            belongings: checkedFeatures ? `特徴: ${checkedFeatures}` : null,
+            companyUrl: document.getElementById('location').value ? `就業場所: ${document.getElementById('location').value}` : null,
+            ratingSalary: document.getElementById('salary').value ? parseInt(document.getElementById('salary').value.replace(/[^0-9]/g, '')) || 0 : 0,
+            ratingHoliday: document.getElementById('holiday').value === '完全週休二日制（土日祝）' ? 5 : 3,
+            deadlineDate: document.getElementById('work-hours').value ? `時間: ${document.getElementById('work-hours').value}` : null
         })
     });
 
