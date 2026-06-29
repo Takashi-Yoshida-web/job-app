@@ -204,7 +204,9 @@ const User = sequelize.define('User',{
     email:{type:DataTypes.STRING, allowNull:false, unique: true},
     password:{type:DataTypes.STRING, allowNull: false},
     gmailRefreshToken: { type: DataTypes.STRING, allowNull: true },
-    lastGmailSync: { type: DataTypes.DATE, allowNull: true }
+    lastGmailSync: { type: DataTypes.DATE, allowNull: true },
+    notifyInterview: { type: DataTypes.BOOLEAN, defaultValue: true },
+    notifyDocument: { type: DataTypes.BOOLEAN, defaultValue: true }
 });
 
 //応募データのテーブル定義
