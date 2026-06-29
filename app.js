@@ -1109,12 +1109,21 @@ app.post('/api/notifications/daily-check', async (req,res) => {
             });
 
             let sentCount = 0;
+
+            
             //ユーザーごとにメールを送信する
             for (const[userId, apps] of Object.entries(appsByUser)) {
-                const user = await User.findByPk(userId, {             // メール送信に必要なメールアドレスとユーザー名だけを取得
-                    attributes: ['email','username']
+               const user = await User.findByPk(userId, {
+                    attributes: ['email', 'username', 'notifyInterview', 'notifyDocument']
                 });
-                if (!user) continue;                                // ユーザーが削除済みなどの場合はスキップ
+                if (!user) continue;                                        // ユーザーが削除済みなどの場合はスキップ
+
+                // 通知設定がOFFのユーザーはスキップ
+                const hasInterview = apps.some(a => a.interviewDate);
+                const hasDeadline  = apps.some(a => a.deadlineDate === todayStr);
+                
+                if (hasInterview && !user.notifyInterview) continue;
+                if (hasDeadline  && !user.notifyDocument)  continue;
 
                 //件名を内容に応じて動的に生成
                 const interviewCount = apps.filter(a => a.interviewDate).length;
